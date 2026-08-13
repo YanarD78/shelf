@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import insert
+from sqlalchemy import insert, select
 from app.core.exceptions import UserAlreadyExistsError
 
 from app.models.users import Users
@@ -16,3 +16,8 @@ class UsersRepo:
             return result.scalar()
         except IntegrityError:
             raise UserAlreadyExistsError()
+
+    async def find_user(self, email: str):
+        stmt = select(Users).where(Users.email == email)
+        result = await self.session.execute(stmt)
+        return result.scalars().one_or_none()

@@ -5,6 +5,10 @@ class UserRegistration(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=40)
 
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
 class RegistrationResponse(BaseModel):
     id: int
     message: str

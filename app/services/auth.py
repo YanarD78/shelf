@@ -1,5 +1,7 @@
 from app.crud.users import UsersRepo
-from app.schemas.user import UserRegistration
+from app.schemas.user import UserRegistration, UserLogin
+from app.core.exceptions import InvalidCredentialsError
+from app.core.security import create_tokens
 
 import bcrypt
 
@@ -17,3 +19,22 @@ class UsersManager:
             password=hashed_password
         )
         return {"id": user_id, "message": "User create successfully"}
+
+    async def login(self, user_data: UserLogin):
+        user = await self.repo.find_user(user_data.email)
+        if user is None:
+            raise InvalidCredentialsError()
+        
+        is_password_correct = bcrypt.checkpw(
+            user_data.password.encode("utf-8"),
+            user.password.encode("utf-8")
+        )
+        if not is_password_correct:
+            raise InvalidCredentialsError()
+
+        tokens = create_tokens(user.id)
+        return {
+            "access_token": tokens["access_token"],
+            "refresh_token": tokens["refresh_token"],
+            "token_type": "bearer"
+        }
