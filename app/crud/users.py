@@ -1,11 +1,12 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import insert, select
+from sqlalchemy import insert, select, Sequence
 from app.core.exceptions import UserAlreadyExistsError
 
-from app.models.users import Users
+from app.models.users import Users, Preferences
 
 class UsersRepo:
+    "A class designed to interact with the database for searching and adding users"
     def __init__(self, session: AsyncSession):
         self.session = session
 
@@ -17,7 +18,12 @@ class UsersRepo:
         except IntegrityError:
             raise UserAlreadyExistsError()
 
-    async def find_user(self, email: str):
+    async def find_user(self, email: str) -> Users | None:
         stmt = select(Users).where(Users.email == email)
         result = await self.session.execute(stmt)
-        return result.scalars().one_or_none()
+        return result.scalar_one_or_none()
+
+    async def get_user_preferences(self, user_id: int) -> Preferences | None:
+        stmt = select(Preferences).where(Preferences.user_id == user_id)
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()

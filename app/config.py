@@ -4,9 +4,12 @@ class Settings(BaseSettings):
     database_url: str
 
     secret_key: str
-    algoritm: str = "HS256"
-    access_token_expire_minutes: int = 60
-    refresh_token_expire_days: int = 15
+    algorithm: str
+    access_token_expire_minutes: int
+    refresh_token_expire_days: int
+
+    tmdb_api: str
+    tmdb_url: str
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

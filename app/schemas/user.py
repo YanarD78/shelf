@@ -12,7 +12,3 @@ class UserLogin(BaseModel):
 class RegistrationResponse(BaseModel):
     id: int
     message: str
-
-class UserLogin(BaseModel):
-    email: EmailStr
-    password: str
