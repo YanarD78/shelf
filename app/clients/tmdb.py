@@ -1,5 +1,6 @@
-from httpx import AsyncClient
+from httpx import AsyncClient, HTTPStatusError, RequestError
 from app.config import settings
+from app.core.exceptions import ExternalServerError
 
 class TMDBClient:
     "A class designed to execute HTTP requests to the TMDB database"
@@ -17,7 +18,12 @@ class TMDBClient:
             "language": language,
             "page": 1
         }
-        
-        response = await self.client.get(url=f"{settings.tmdb_url}/3/search/movie", headers=headers, params=params)
-        response.raise_for_status()
-        return response.json()
+
+        try:
+            response = await self.client.get(url=f"{settings.tmdb_url}/3/search/movie", headers=headers, params=params)
+            response.raise_for_status()
+            return response.json()
+        except HTTPStatusError:
+            raise ExternalServerError()
+        except RequestError:
+            raise ExternalServerError()

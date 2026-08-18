@@ -7,23 +7,30 @@ from app.services.movies import MoviesManager
 from httpx import AsyncClient
 from app.clients.tmdb import TMDBClient
 from app.core.security import oauth_scheme, decode_token
+from app.core.exceptions import InvalidTokenError
 
 from collections.abc import AsyncIterator
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Annotated
 
 
+def get_current_user(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(oauth_scheme)]
+) -> int:
+    if credentials is None:
+        raise InvalidTokenError()
+    return decode_token(credentials.credentials)
 
-def get_current_user(credentials: HTTPAuthorizationCredentials | None = Depends(oauth_scheme)) -> int:
-    token = credentials.credentials
-    user_id = decode_token(token)
-    return user_id
-
+CurrentUser = Annotated[int, Depends(get_current_user)]
 
 
 # HTTP-Client
 async def get_http_client() -> AsyncIterator[AsyncClient]:
     async with AsyncClient() as client:
         yield client
+
+HttpClientDep = Annotated[AsyncClient, Depends(get_http_client)]
+
 
 # SQLAlchemy session
 async def get_session() -> AsyncIterator[AsyncSession]:
@@ -35,26 +42,34 @@ async def get_session() -> AsyncIterator[AsyncSession]:
             await session.rollback()
             raise
 
+SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 
 # User repo
-def get_user_repo(session: AsyncSession = Depends(get_session)) -> UsersRepo:
+def get_user_repo(session: SessionDep) -> UsersRepo:
     return UsersRepo(session)
 
+UserRepoDep = Annotated[UsersRepo, Depends(get_user_repo)]
+
 # User manager
-def get_user_manager(repo: UsersRepo = Depends(get_user_repo)) -> UsersManager:
+def get_user_manager(repo: UserRepoDep) -> UsersManager:
     return UsersManager(repo)
 
+UserManagerDep = Annotated[UsersManager, Depends(get_user_manager)]
 
 
 # Movie TMDB-Client
-async def get_tmdb_client(client: AsyncClient = Depends(get_http_client)) -> TMDBClient:
+async def get_tmdb_client(client: HttpClientDep) -> TMDBClient:
     return TMDBClient(client)
+
+TMDBClientDep = Annotated[TMDBClient, Depends(get_tmdb_client)]
 
 # Movie manager
 async def get_movie_manager(
-    tmdbclient: TMDBClient = Depends(get_tmdb_client),
-    repo: UsersRepo = Depends(get_user_repo),
-    current_user: int = Depends(get_current_user)
+    tmdbclient: TMDBClientDep,
+    repo: UserRepoDep,
+    current_user: CurrentUser
 ) -> MoviesManager:
     return MoviesManager(tmdbclient, repo, current_user)
+
+MovieManagerDep = Annotated[MoviesManager, Depends(get_movie_manager)]

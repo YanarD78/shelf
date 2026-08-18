@@ -18,7 +18,7 @@ app = FastAPI(lifespan=lifespan)
 
 @app.exception_handler(AppError)
 async def app_error_handler(request, exc: AppError):
-    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+    return JSONResponse(status_code=exc.status_code, content={"detail": str(exc)})
 
 app.include_router(users_router)
 app.include_router(movies_router)

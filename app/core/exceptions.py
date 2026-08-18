@@ -2,6 +2,11 @@ class AppError(Exception):
     status_code = 500
     detail = "Internal server error"
 
+    def __init__(self, detail: str | None = None):
+        if detail is not None:
+            self.detail = detail
+        super().__init__(self.detail)
+
 
 
 class UserAlreadyExistsError(AppError):
@@ -21,3 +26,9 @@ class TokenExpiredError(AppError):
 class InvalidTokenError(AppError):
     status_code = 401
     detail = "Could not validate credentials"
+
+
+
+class ExternalServerError(AppError):
+    status_code = 502
+    detail = "External server is unavailable"
