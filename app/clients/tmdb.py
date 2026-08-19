@@ -1,4 +1,4 @@
-from httpx import AsyncClient, HTTPStatusError, RequestError
+from httpx2 import AsyncClient, HTTPStatusError, RequestError
 from app.config import settings
 from app.core.exceptions import ExternalServerError
 
