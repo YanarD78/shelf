@@ -3,16 +3,14 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
 from app.core.exceptions import AppError
-from app.database import engine, Base
+from app.database import engine
 from app.api.routers.user import router as users_router
-from app.api.routers.movies import router as movies_router
+from app.api.routers.movie import router as movies_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-        yield
-        await engine.dispose()
+    yield
+    await engine.dispose()
 
 app = FastAPI(lifespan=lifespan)
 

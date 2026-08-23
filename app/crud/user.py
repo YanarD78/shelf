@@ -3,7 +3,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy import insert, select, Sequence
 from app.core.exceptions import UserAlreadyExistsError
 
-from app.models.users import Users, Preferences
+from app.models.user import Users, Preferences
 
 class UsersRepo:
     "A class designed to interact with the database for searching and adding users"

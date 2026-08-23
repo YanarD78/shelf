@@ -5,6 +5,9 @@ from datetime import datetime, timezone, timedelta
 from app.config import settings
 from app.core.exceptions import InvalidTokenError, TokenExpiredError
 
+
+
+# Tokens
 def create_tokens(user_id: int) -> str:
     payload = {
         "sub": str(user_id),
@@ -60,6 +63,7 @@ oauth_scheme = HTTPBearer(auto_error=False)
 
 
 
+# Passwords
 def hash_password(password: str) -> str:
     bytes_password = password.encode("utf-8")
 

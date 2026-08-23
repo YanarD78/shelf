@@ -1,4 +1,4 @@
-from app.crud.users import UsersRepo
+from app.crud.user import UsersRepo
 from app.clients.tmdb import TMDBClient
 
 class MoviesManager:

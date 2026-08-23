@@ -1,4 +1,4 @@
-from app.crud.users import UsersRepo
+from app.crud.user import UsersRepo
 from app.schemas.user import UserRegistration, UserLogin
 from app.core.exceptions import InvalidCredentialsError
 from app.core.security import create_tokens, hash_password, check_password
@@ -15,7 +15,7 @@ class UsersManager:
             email=user_data.email,
             password=hashed_password
         )
-        return {"id": user_id, "message": "User create successfully"}
+        return {"id": user_id, "message": "User created successfully"}
 
     async def login(self, user_data: UserLogin):
         user = await self.repo.find_user(user_data.email)
