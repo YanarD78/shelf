@@ -4,7 +4,7 @@ from app.core.exceptions import InvalidCredentialsError
 from app.core.security import create_tokens, hash_password, check_password
 
 class UsersManager:
-    "A class designed for user registration and authorization"
+    """A class designed for user registration and authorization"""
     def __init__(self, repo: UsersRepo):
         self.repo = repo
 
@@ -15,6 +15,9 @@ class UsersManager:
             email=user_data.email,
             password=hashed_password
         )
+
+        await self.repo.add_user_preferences(user_id=user_id)
+
         return {"id": user_id, "message": "User created successfully"}
 
     async def login(self, user_data: UserLogin):

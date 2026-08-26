@@ -2,7 +2,7 @@ from app.crud.user import UsersRepo
 from app.clients.tmdb import TMDBClient
 
 class MoviesManager:
-    "A class designed for searching for movies and saving them"
+    """A class designed for searching for movies and saving them"""
     def __init__(self, client: TMDBClient, repo: UsersRepo, current_user: int):
         self.client = client
         self.repo = repo

@@ -6,7 +6,7 @@ from app.core.exceptions import UserAlreadyExistsError
 from app.models.user import Users, Preferences
 
 class UsersRepo:
-    "A class designed to interact with the database for searching and adding users"
+    """A class designed to interact with the database for searching and adding users"""
     def __init__(self, session: AsyncSession):
         self.session = session
 
@@ -17,6 +17,10 @@ class UsersRepo:
             return result.scalar()
         except IntegrityError:
             raise UserAlreadyExistsError()
+
+    async def add_user_preferences(self, user_id: int) -> None:
+        stmt = insert(Preferences).values(user_id=user_id, include_adult=False, language="en-US")
+        await self.session.execute(stmt)
 
     async def find_user(self, email: str) -> Users | None:
         stmt = select(Users).where(Users.email == email)

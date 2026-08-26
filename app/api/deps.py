@@ -4,7 +4,7 @@ from fastapi.security import HTTPAuthorizationCredentials
 from app.crud.user import UsersRepo
 from app.services.auth import UsersManager
 from app.services.movie import MoviesManager
-from httpx2 import AsyncClient
+from httpx import AsyncClient
 from app.clients.tmdb import TMDBClient
 from app.core.security import oauth_scheme, decode_token
 from app.core.exceptions import InvalidTokenError
