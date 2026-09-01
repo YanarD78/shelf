@@ -15,6 +15,7 @@ from app.main import app
 async def engine():
     engine = create_async_engine(settings.test_db)
     async with engine.begin() as connection:
+        await connection.run_sync(Base.metadata.drop_all)
         await connection.run_sync(Base.metadata.create_all)
     yield engine
     await engine.dispose()
@@ -25,7 +26,10 @@ async def db_session(engine: AsyncEngine) -> AsyncIterator[AsyncSession]:
     transaction = await connection.begin()
 
     async_session_maker = async_sessionmaker(
-        bind=connection, class_=AsyncSession, expire_on_commit=False
+        bind=connection,
+        class_=AsyncSession,
+        expire_on_commit=False,
+        join_transaction_mode="create_savepoint",
     )
     session = async_session_maker()
 
@@ -40,7 +44,7 @@ def mock_external_apis():
     with respx.mock:
         yield
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture()
 async def client(db_session):
     app.dependency_overrides[get_session] = lambda: db_session
     transport = ASGITransport(app=app)
@@ -51,19 +55,19 @@ async def client(db_session):
 
 
 @pytest_asyncio.fixture
-async def registred_user(client):
+async def registred_user(client: AsyncClient):
     payload = {
         "username": "string",
         "email": "user@example.com",
         "password": "stringst"
     }
-    await client.post("/registration", json=payload)
+    await client.post("/auth/register", json=payload)
     return payload
 
 @pytest_asyncio.fixture
-async def auth_headers(client, registred_user):
+async def auth_headers(client: AsyncClient, registred_user):
     response = await client.post(
-        "/login",
+        "/auth/login",
         json={
             "email": registred_user["email"],
             "password": registred_user["password"]

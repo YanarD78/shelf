@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     tmdb_api: str
     tmdb_url: str
 
+    locales: set[str] = {"ru-RU"}
+    def_locale: str = "ru-RU"
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 settings = Settings()

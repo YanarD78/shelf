@@ -32,3 +32,13 @@ class InvalidTokenError(AppError):
 class ExternalServerError(AppError):
     status_code = 502
     detail = "External server is unavailable"
+
+
+
+class ItemNotFound(AppError):
+    status_code = 404
+    detail = "Item not found"
+
+class RecordAlreadyExists(AppError):
+    status_code = 409
+    detail = "Record already exists"

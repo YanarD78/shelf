@@ -17,4 +17,4 @@ class Preferences(Base):
     __tablename__ = "users_preferences"
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
     include_adult: Mapped[bool] = mapped_column(default=False)
-    language: Mapped[str] = mapped_column(default="en-US")
+    language: Mapped[str | None] = mapped_column(default="en-US")

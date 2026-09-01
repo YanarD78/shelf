@@ -36,11 +36,11 @@ def create_tokens(user_id: int) -> str:
         "refresh_token": refresh_token
     }
 
-def decode_token(token: str):
+def decode_access_token(access_token: str):
     try:
 
         payload = jwt.decode(
-            jwt=token,
+            jwt=access_token,
             key=settings.secret_key,
             algorithms=[settings.algorithm]
         )
@@ -59,7 +59,29 @@ def decode_token(token: str):
     
     return int(user_id)
 
-oauth_scheme = HTTPBearer(auto_error=False)
+def decode_refresh_token(refresh_token: str) -> int:
+    try:
+        payload = jwt.decode(
+            jwt=refresh_token,
+            key=settings.secret_key,
+            algorithms=[settings.algorithm]
+        )
+
+        if payload.get("type") != "refresh":
+            raise jwt.InvalidTokenError("Invalid token type")
+
+        user_id = payload.get("sub")
+        if user_id is None:
+            raise jwt.InvalidTokenError("Could not validate credentials")
+
+    except jwt.ExpiredSignatureError:
+        raise TokenExpiredError()
+    except jwt.InvalidTokenError:
+        raise InvalidTokenError()
+
+    return int(user_id)
+
+security = HTTPBearer(auto_error=False)
 
 
 

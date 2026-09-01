@@ -1,9 +1,14 @@
 from pydantic import BaseModel
-from typing import Optional
 
 class Film(BaseModel):
     id: int
     title: str
     overview: str
-    release_date: Optional[str]
+    release_date: str | None
     vote_average: float
+
+class WatchlistResponse(BaseModel):
+    id: int
+
+class WatchlistRequest(BaseModel):
+    movie_id: int
