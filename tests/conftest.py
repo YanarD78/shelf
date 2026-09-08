@@ -44,7 +44,7 @@ def mock_external_apis():
     with respx.mock:
         yield
 
-@pytest_asyncio.fixture()
+@pytest_asyncio.fixture
 async def client(db_session):
     app.dependency_overrides[get_session] = lambda: db_session
     transport = ASGITransport(app=app)

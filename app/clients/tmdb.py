@@ -7,7 +7,7 @@ class TMDBClient:
     def __init__(self, client: AsyncClient):
         self.client = client
 
-    async def search_movie(self, query: str, include_adult: bool, language: str) -> dict:
+    async def search_movie(self, query: str, include_adult: bool, language: str) -> list[dict]:
         headers = {
             "Authorization": f"Bearer {settings.tmdb_api}",
             "accept": "application/json"
@@ -21,6 +21,18 @@ class TMDBClient:
 
         try:
             response = await self.client.get(url=f"{settings.tmdb_url}/3/search/movie", headers=headers, params=params)
+            response.raise_for_status()
+            return response.json()
+        except (HTTPStatusError, RequestError):
+            raise ExternalServerError()
+
+    async def get_movie(self, tmdb_id: int) -> dict:
+        headers = {
+            "Authorization": f"Bearer {settings.tmdb_api}",
+            "accept": "application/json"
+        }
+        try:
+            response = await self.client.get(url=f"{settings.tmdb_url}/3/movie/{tmdb_id}", headers=headers)
             response.raise_for_status()
             return response.json()
         except (HTTPStatusError, RequestError):
