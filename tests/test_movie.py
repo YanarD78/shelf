@@ -44,12 +44,31 @@ async def test_get_movie_with_wrong_token(client: AsyncClient):
 
 
 
+# Get wathlist
+async def test_get_watchlist(client: AsyncClient, auth_headers, add_watchlist):
+    response = await client.get(
+        "/movies/watchlist",
+        params={"released_before": "2000-01-01"},
+        headers=auth_headers
+    )
+    assert response.status_code == 200
+
+async def test_get_watchlist_with_wrong_token(client: AsyncClient, add_watchlist):
+    response = await client.get(
+        "/movies/watchlist",
+        params={"released_before": "2000-01-01"},
+        headers={"Authorization": "Bearer wrong_token"}
+    )
+    assert response.status_code == 401
+
+
+
 # Add to watchlist
 async def test_add_to_watchlist(client: AsyncClient, auth_headers):
     mock_get_movie()
     response = await client.post(
         "/movies/watchlist",
-        json={"movie_id": 550},
+        json={"external_id": 550},
         headers=auth_headers
     )
     assert response.status_code == 200
@@ -58,7 +77,7 @@ async def test_add_to_watchlist_with_wrong_token(client: AsyncClient):
     mock_get_movie()
     response = await client.post(
         "/movies/watchlist",
-        json={"movie_id": 550},
+        json={"external_id": 550},
         headers={
             "Authorization": "Bearer wrong_token"
         }
@@ -69,12 +88,12 @@ async def test_add_to_watchlist_with_integrity_error(client: AsyncClient, auth_h
     mock_get_movie()
     await client.post(
         "/movies/watchlist",
-        json={"movie_id": 550},
+        json={"external_id": 550},
         headers=auth_headers
     )
     response = await client.post(
         "/movies/watchlist",
-        json={"movie_id": 550},
+        json={"external_id": 550},
         headers=auth_headers
     )
     assert response.status_code == 409
@@ -86,11 +105,11 @@ async def test_delete_from_watchlist(client: AsyncClient, auth_headers):
     mock_get_movie()
     post_response = await client.post(
         "/movies/watchlist",
-        json={"movie_id": 550},
+        json={"external_id": 550},
         headers=auth_headers
     )
     response = await client.delete(
-        f"/movies/watchlist/{post_response.json()["movie_id"]}",
+        f"/movies/watchlist/{post_response.json()["local_id"]}",
         headers=auth_headers
     )
     assert response.status_code == 204
@@ -104,13 +123,23 @@ async def test_delete_from_watchlist_with_no_content_error(client: AsyncClient, 
 
 
 
+# Get watched
+async def test_get_watched(client: AsyncClient, auth_headers, add_watched):
+    response = await client.get(
+        "/movies/watched",
+        headers=auth_headers
+    )
+    assert response.status_code == 200
+
+
+
 # Add to watched
 async def test_add_to_watched(client: AsyncClient, auth_headers):
     mock_get_movie()
     response = await client.post(
         "/movies/watched",
         json={
-            "movie_id": 550,
+            "external_id": 550,
             "first_watch": True,
             "watched_at": "1999-05-12",
             "rating": 9.5,
@@ -125,7 +154,7 @@ async def test_add_to_watched_with_wrong_token(client: AsyncClient):
     response = await client.post(
         "/movies/watched",
         json={
-            "movie_id": 550,
+            "external_id": 550,
             "first_watch": True,
             "watched_at": "1999-05-12",
             "rating": 9.5,
@@ -145,7 +174,7 @@ async def test_delete_from_watched(client: AsyncClient, auth_headers):
     post_reponse = await client.post(
         "/movies/watched",
         json={
-            "movie_id": 550,
+            "external_id": 550,
             "first_watch": True,
             "watched_at": "1999-05-12",
             "rating": 9.5,
@@ -164,7 +193,7 @@ async def test_delete_from_else_watched(client: AsyncClient, auth_headers):
     post_reponse = await client.post(
         "/movies/watched",
         json={
-            "movie_id": 550,
+            "external_id": 550,
             "first_watch": True,
             "watched_at": "1999-05-12",
             "rating": 9.5,

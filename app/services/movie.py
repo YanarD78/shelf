@@ -1,7 +1,9 @@
-from app.crud.movies import MoviesRepo
-from app.crud.user import UsersRepo
+from app.repositories.movie import MoviesRepo
+from app.repositories.user import UsersRepo
+from app.dto.dto import WatchlistFilter, WatchedFilter
 from app.clients.tmdb import TMDBClient
 from app.core.exceptions import ItemNotFound, ExternalServerError
+from typing import Sequence
 
 from datetime import date
 
@@ -13,17 +15,17 @@ class MoviesManager:
         self.movies_repo = movies_repo
         self.user = current_user
 
-    async def _resolve_local_movie_id(self, tmdb_id: int) -> int:
-        local_movie_id = await self.movies_repo.get_movie(tmdb_id=tmdb_id)
-        if local_movie_id is not None:
-            return local_movie_id
+    async def _resolve_local_id(self, external_id: int) -> int:
+        local_id = await self.movies_repo.get_movie(external_id=external_id)
+        if local_id is not None:
+            return local_id
         
-        movie = await self.client.get_movie(tmdb_id=tmdb_id)
+        movie = await self.client.get_movie(external_id=external_id)
         return await self.movies_repo.add_movie(
-            tmdb_id=movie["id"],
+            external_id=movie["id"],
             title=movie["title"],
             poster_path=movie["poster_path"],
-            release_date=movie["release_date"]
+            release_date=date.fromisoformat(movie["release_date"]) if movie["release_date"] else None
         )
 
 
@@ -42,39 +44,46 @@ class MoviesManager:
 
 
 
-    async def add_to_watchlist(self, tmdb_id: int) -> dict[str, int]:
-        local_movie_id = await self._resolve_local_movie_id(tmdb_id=tmdb_id)
+    async def get_watchlist(self, filters: WatchlistFilter) -> Sequence:
+        result = await self.movies_repo.get_watchlist(user_id=self.user, filters=filters)
+        return result
+
+    async def add_to_watchlist(self, external_id: int) -> dict[str, int]:
+        local_id = await self._resolve_local_id(external_id=external_id)
 
         result = await self.movies_repo.add_to_watchlist(
             user_id=self.user,
-            local_movie_id=local_movie_id
+            local_id=local_id
         )
-        return {"id": result, "movie_id": local_movie_id}
+        return {"id": result, "local_id": local_id}
 
-    async def delete_from_watchlist(self, local_movie_id: int) -> None:
-        result = await self.movies_repo.delete_from_watchlist(user_id=self.user, local_movie_id=local_movie_id)
+    async def delete_from_watchlist(self, local_id: int) -> None:
+        result = await self.movies_repo.delete_from_watchlist(user_id=self.user, local_id=local_id)
         if not result:
             raise ItemNotFound("The movie not found")
 
 
+    async def get_watched(self, filters: WatchedFilter) -> Sequence:
+        result = await self.movies_repo.get_watched(user_id=self.user, filters=filters)
+        return result
 
-    async def add_to_watched(self, tmdb_id: int, first_watch: bool, watched_at: date, rating: float | None, comment: str | None) -> dict[str, int]:
-        local_movie_id = await self._resolve_local_movie_id(tmdb_id=tmdb_id)
+    async def add_to_watched(self, external_id: int, first_watch: bool, watched_at: date, rating: float | None, comment: str | None) -> dict[str, int]:
+        local_id = await self._resolve_local_id(external_id=external_id)
 
         result = await self.movies_repo.add_to_watched(
             user_id=self.user,
-            local_movie_id=local_movie_id,
+            local_id=local_id,
             first_watch=first_watch,
             watched_at=watched_at,
             rating=rating,
             comment=comment,
         )
-        return {"id": result, "movie_id": local_movie_id}
+        return {"id": result, "local_id": local_id}
 
-    async def delete_from_watched(self, record_id: int) -> None:
+    async def delete_from_watched(self, row_id: int) -> None:
         result = await self.movies_repo.delete_from_watched(
             user_id=self.user,
-            record_id=record_id
+            row_id=row_id
         )
         if not result:
             raise ItemNotFound("The movie not found")

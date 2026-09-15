@@ -1,11 +1,13 @@
 from contextlib import asynccontextmanager
+import logging
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
-
 from app.core.exceptions import AppError
 from app.database import engine, Base
 from app.api.routers.user import router as users_router
 from app.api.routers.movie import router as movies_router
+
+logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -20,6 +22,11 @@ app = FastAPI(lifespan=lifespan)
 @app.exception_handler(AppError)
 async def app_error_handler(request, exc: AppError):
     return JSONResponse(status_code=exc.status_code, content={"detail": str(exc)})
+
+@app.exception_handler(Exception)
+async def unhandled_error_handler(request, exc: Exception):
+    logger.exception("Unhandled error on %s %s", request.method, request.url)
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 app.include_router(users_router)
 app.include_router(movies_router)

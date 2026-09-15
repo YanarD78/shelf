@@ -1,18 +1,18 @@
-from app.database import async_session_maker
 from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials
-from app.crud.user import UsersRepo
-from app.crud.movies import MoviesRepo
+from httpx import AsyncClient
+from app.database import async_session_maker
+from app.repositories.user import UsersRepo
+from app.repositories.movie import MoviesRepo
 from app.config import settings
 from app.services.auth import UsersManager
 from app.services.movie import MoviesManager
-from httpx import AsyncClient
 from app.clients.tmdb import TMDBClient
 from app.core.security import security, decode_access_token
 from app.core.exceptions import InvalidTokenError
-
-from collections.abc import AsyncIterator
+from app.schemas.movie import WatchlistQuery, WatchedQuery
 from sqlalchemy.ext.asyncio import AsyncSession
+from collections.abc import AsyncIterator
 from typing import Annotated
 
 
@@ -115,5 +115,11 @@ async def get_movie_manager(
     current_user: CurrentUser
 ) -> MoviesManager:
     return MoviesManager(tmdbclient, users_repo, movies_repo, current_user)
+
+# Get watchlist query
+GetWatchlistQuery = Annotated[WatchlistQuery, Depends()]
+
+# Get watched query
+GetWatchedQuery = Annotated[WatchedQuery, Depends()]
 
 MovieManagerDep = Annotated[MoviesManager, Depends(get_movie_manager)]

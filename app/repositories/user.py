@@ -2,7 +2,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import insert, select
 from app.core.exceptions import UserAlreadyExistsError
-
 from app.models.user import Users, Preferences
 
 class UsersRepo:

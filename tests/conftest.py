@@ -8,6 +8,7 @@ from app.database import Base
 from app.config import settings
 from app.api.deps import get_session
 from app.main import app
+from tests.handlers.tmdb import mock_get_movie
 
 
 
@@ -15,7 +16,6 @@ from app.main import app
 async def engine():
     engine = create_async_engine(settings.test_db)
     async with engine.begin() as connection:
-        await connection.run_sync(Base.metadata.drop_all)
         await connection.run_sync(Base.metadata.create_all)
     yield engine
     await engine.dispose()
@@ -75,3 +75,29 @@ async def auth_headers(client: AsyncClient, registred_user):
     )
     token = response.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
+
+@pytest_asyncio.fixture
+async def add_watchlist(client: AsyncClient, auth_headers):
+    mock_get_movie()
+    await client.post(
+        "/movies/watchlist",
+        headers=auth_headers,
+        json={
+            "external_id": 550
+        }
+    )
+
+@pytest_asyncio.fixture
+async def add_watched(client: AsyncClient, auth_headers):
+    mock_get_movie()
+    await client.post(
+        "/movies/watched",
+        headers=auth_headers,
+        json={
+            "external_id": 550,
+            "first_watch": True,
+            "watched_at": "2026-09-14",
+            "rating": 9.8,
+            "comment": "string"
+        }
+    )

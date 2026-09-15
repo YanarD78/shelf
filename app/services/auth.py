@@ -1,4 +1,4 @@
-from app.crud.user import UsersRepo
+from app.repositories.user import UsersRepo
 from app.core.exceptions import InvalidCredentialsError
 from app.core.security import create_tokens, hash_password, check_password, decode_refresh_token
 
