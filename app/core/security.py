@@ -8,7 +8,7 @@ from app.core.exceptions import InvalidTokenError, TokenExpiredError
 
 
 # Tokens
-def create_tokens(user_id: int) -> str:
+def create_tokens(user_id: int) -> dict[str, str]:
     payload = {
         "sub": str(user_id),
         "type": "access",
@@ -36,50 +36,37 @@ def create_tokens(user_id: int) -> str:
         "refresh_token": refresh_token
     }
 
-def decode_access_token(access_token: str):
+def _decode_token(token: str, expected_type: str) -> int:
     try:
 
         payload = jwt.decode(
-            jwt=access_token,
+            jwt=token,
             key=settings.secret_key,
-            algorithms=[settings.algorithm]
+            algorithms=[settings.algorithm],
+            options={"require": ["exp", "sub"]}
         )
 
-        if payload.get("type") != "access":
+        if payload.get("type") != expected_type:
             raise jwt.InvalidTokenError("Invalid token type")
 
         user_id = payload.get("sub")
         if user_id is None:
             raise jwt.InvalidTokenError("Could not validate credentials")
+
+        return int(user_id)
         
     except jwt.ExpiredSignatureError:
         raise TokenExpiredError()
-    except jwt.InvalidTokenError:
-        raise InvalidTokenError()
-    
-    return int(user_id)
-
-def decode_refresh_token(refresh_token: str) -> int:
-    try:
-        payload = jwt.decode(
-            jwt=refresh_token,
-            key=settings.secret_key,
-            algorithms=[settings.algorithm]
-        )
-
-        if payload.get("type") != "refresh":
-            raise jwt.InvalidTokenError("Invalid token type")
-
-        user_id = payload.get("sub")
-        if user_id is None:
-            raise jwt.InvalidTokenError("Could not validate credentials")
-
-    except jwt.ExpiredSignatureError:
-        raise TokenExpiredError()
-    except jwt.InvalidTokenError:
+    except (jwt.InvalidTokenError, ValueError):
         raise InvalidTokenError()
 
-    return int(user_id)
+def decode_access_token(token: str) -> int:
+    return _decode_token(token=token, expected_type="access")
+
+def decode_refresh_token(token: str) -> int:
+    return _decode_token(token=token, expected_type="refresh")
+
+
 
 security = HTTPBearer(auto_error=False)
 

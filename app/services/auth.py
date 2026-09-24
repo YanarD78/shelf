@@ -1,6 +1,9 @@
+from fastapi.concurrency import run_in_threadpool
 from app.repositories.user import UsersRepo
 from app.core.exceptions import InvalidCredentialsError
 from app.core.security import create_tokens, hash_password, check_password, decode_refresh_token
+
+fake_hash = hash_password("password1234")
 
 class UsersManager:
     """A class designed for user registration and authorization"""
@@ -8,10 +11,10 @@ class UsersManager:
         self.repo = repo
 
     async def register_user(self, email: str, username: str, password: str, language: str) -> dict:
-        hashed_password = hash_password(password)
+        hashed_password = await run_in_threadpool(hash_password, password)
         user_id = await self.repo.add_user_with_preferences(
             username=username,
-            email=email,
+            email=email.strip().lower(),
             password=hashed_password,
             lang=language
         )
@@ -20,14 +23,10 @@ class UsersManager:
 
     async def login(self, email: str, password: str) -> dict:
         user = await self.repo.find_user(email=email)
-        if user is None:
-            raise InvalidCredentialsError()
+        to_check = user.password if user else fake_hash
         
-        is_password_correct = check_password(
-            password,
-            user.password
-        )
-        if not is_password_correct:
+        is_password_correct = await run_in_threadpool(check_password, password, to_check)
+        if user is None or not is_password_correct:
             raise InvalidCredentialsError()
         
         tokens = create_tokens(user.id)
@@ -38,14 +37,14 @@ class UsersManager:
         }
 
     async def refresh_token(self, token: str) -> dict:
-        user_id = decode_refresh_token(refresh_token=token)
+        user_id = await run_in_threadpool(decode_refresh_token, token)
         user = await self.repo.find_user_by_id(user_id=user_id)
         if user is None:
             raise InvalidCredentialsError("User no longer exists")
         
-        token = create_tokens(user_id)
+        new_tokens = create_tokens(user_id)
         return {
-            "access_token": token["access_token"],
-            "refresh_token": token["refresh_token"],
+            "access_token": new_tokens["access_token"],
+            "refresh_token": new_tokens["refresh_token"],
             "token_type": "Bearer"
         }
