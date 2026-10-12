@@ -101,6 +101,16 @@ class DiaryRepo:
         except IntegrityError:
             raise RecordAlreadyExists()
 
+    async def edit_wishlist(self, user_id: int, local_id: int, note: str) -> int:
+        stmt = update(Wishlist).where(
+            Wishlist.user_id==user_id,
+            Wishlist.local_id==local_id
+        ).values(
+            note=note
+        ).returning(Wishlist.id)
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def delete_from_wishlist(self, user_id: int, local_id: int) -> int | None:
         stmt = delete(Wishlist).where(
             Wishlist.user_id==user_id,
@@ -154,6 +164,16 @@ class DiaryRepo:
         ).returning(Completed.id)
         result = await self.session.execute(stmt)
         return result.scalar_one()
+
+    async def edit_completed(self, user_id: int, row_id: int, data: dict) -> int:
+        stmt = update(Completed).where(
+            Completed.user_id==user_id,
+            Completed.id==row_id
+        ).values(
+            **data
+        ).returning(Completed.id)
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
 
     async def delete_from_completed(self, user_id: int, row_id: int) -> int | None:
         stmt = delete(Completed).where(

@@ -7,22 +7,18 @@ from datetime import date, datetime
 
 class MovieBase(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-
     external_id: str
     title: str
     overview: str | None = None
     release_date: date | None = None
     cover_url: str | None = None
     vote_average: float | None = None
-
     @classmethod
     def from_external(cls, item: ExternalItem):
         return cls.model_validate({**asdict(item), **item.extra})
 
-
 class SearchedMovie(MovieBase):
     pass
-
 
 class Movie(MovieBase):
     runtime_minutes: int | None = None
@@ -34,6 +30,8 @@ class Movie(MovieBase):
 class SearchQuery(BaseModel):
     query: str = Field(min_length=2, max_length=100)
     page: int = Field(default=1, ge=1)
+
+
 
 class GetWishlistOut(BaseModel):
     id: int
@@ -49,6 +47,9 @@ class PostWishlistRequest(BaseModel):
 class PostWishlistResponse(BaseModel):
     id: int
     local_id: int
+
+class PatchWishlistRequest(BaseModel):
+    note: str
 
 class WishlistQuery(BaseModel):
     added_before: date | None = None
@@ -84,6 +85,12 @@ class PostCompletedRequest(BaseModel):
 class PostCompletedResponse(BaseModel):
     id: int
     local_id: int
+
+class PatchCompletedRequest(BaseModel):
+    is_first: bool | None = None
+    completed_on: date | None = None
+    rating: float | None = Field(default=None, ge=0.0, le=10.0)
+    comment: str | None = None
 
 class CompletedQuery(BaseModel):
     local_id: int | None = None

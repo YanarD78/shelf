@@ -54,6 +54,11 @@ class Manager:
         )
         return {"id": result, "local_id": local_id}
 
+    async def edit_wishlist(self, local_id: str, note: str) -> None:
+        result = await self.diary_repo.edit_wishlist(user_id=self.user, local_id=local_id, note=note)
+        if result is None:
+            raise ItemNotFound()
+
     async def delete_from_wishlist(self, local_id: int) -> None:
         result = await self.diary_repo.delete_from_wishlist(user_id=self.user, local_id=local_id)
         if result is None:
@@ -76,6 +81,15 @@ class Manager:
             comment=comment,
         )
         return {"id": result, "local_id": local_id}
+
+    async def edit_watched(self, row_id: str, data: dict) -> None:
+        result = await self.diary_repo.edit_completed(
+            user_id=self.user,
+            row_id=row_id,
+            data=data
+        )
+        if result is None:
+            raise ItemNotFound()
 
     async def delete_from_completed(self, row_id: int) -> None:
         result = await self.diary_repo.delete_from_completed(
