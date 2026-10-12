@@ -1,52 +1,28 @@
-from fastapi import Depends, Request
-from fastapi.security import HTTPAuthorizationCredentials
+from fastapi import Depends, Request, Query
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from httpx import AsyncClient
 from app.database import async_session_maker
-from app.repositories.user import UsersRepo
-from app.repositories.movie import MoviesRepo
+from app.models.media import MediaType
+from app.repositories.user import UserRepo
+from app.repositories.diary import DiaryRepo
 from app.config import settings
-from app.services.auth import UsersManager
-from app.services.movie import MoviesManager
-from app.clients.tmdb import TMDBClient
-from app.core.security import security, decode_access_token
+from app.services.auth import UserManager
+from app.services.diary import Manager
+from app.providers.tmdb import TMDBClient
+from app.core.security import decode_access_token
 from app.core.exceptions import InvalidTokenError
-from app.schemas.movie import WatchlistQuery, WatchedQuery
+from app.schemas.movie import WishlistQuery, CompletedQuery, SearchQuery
 from sqlalchemy.ext.asyncio import AsyncSession
 from collections.abc import AsyncIterator
 from typing import Annotated
 
 
 
-# Get user language
-SUPPORTED_LOCALES = settings.locales
-DEFAULT_LOCALE = settings.def_locale
-
-def parse_language(header_value: str) -> str | None:
-    if not header_value:
-        return None
-    
-    locales = []
-    for part in header_value.split(","):
-        part = part.strip()
-        if ";q=" in part:
-            l, q = part.split(";q=")
-            locales.append((l.strip(), float(q)))
-        else:
-            locales.append((part, 1.0))
-    locales.sort(key=lambda x: x[1], reverse=True)
-    for l, _ in locales:
-        if l in SUPPORTED_LOCALES:
-            return l
-    return None
-
-def resolve_language(request: Request) -> str:
-    return parse_language(request.headers.get("Accept-Language", "")) or DEFAULT_LOCALE
-    
-ResolveLang = Annotated[str, Depends(resolve_language)]
+security = HTTPBearer(auto_error=False)
 
 
 
-# Get current user id
+# _____Get current user id_____
 def get_current_user(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security)]
 ) -> int:
@@ -58,16 +34,15 @@ CurrentUser = Annotated[int, Depends(get_current_user)]
 
 
 
-# HTTP-Client
-async def get_http_client() -> AsyncIterator[AsyncClient]:
-    async with AsyncClient() as client:
-        yield client
+# _____HTTP-Client_____
+def get_http_client(request: Request) -> AsyncClient:
+    return request.app.state.http
 
 HttpClientDep = Annotated[AsyncClient, Depends(get_http_client)]
 
 
 
-# SQLAlchemy session
+# _____SQLAlchemy session_____
 async def get_session() -> AsyncIterator[AsyncSession]:
     async with async_session_maker() as session:
         try:
@@ -77,49 +52,65 @@ async def get_session() -> AsyncIterator[AsyncSession]:
             await session.rollback()
             raise
 
-SessionDep = Annotated[AsyncSession, Depends(get_session)]
+SessionDep = Annotated[AsyncSession, Depends(get_session, scope="function")]
 
 
 
-# User repo
-def get_user_repo(session: SessionDep) -> UsersRepo:
-    return UsersRepo(session)
+# _____User repo_____
+def get_user_repo(session: SessionDep) -> UserRepo:
+    return UserRepo(session)
 
-UserRepoDep = Annotated[UsersRepo, Depends(get_user_repo)]
+UserRepoDep = Annotated[UserRepo, Depends(get_user_repo)]
 
-# User manager
-def get_user_manager(users_repo: UserRepoDep) -> UsersManager:
-    return UsersManager(users_repo)
+# _____User manager_____
+def get_user_manager(users_repo: UserRepoDep) -> UserManager:
+    return UserManager(users_repo)
 
-UserManagerDep = Annotated[UsersManager, Depends(get_user_manager)]
+UserManagerDep = Annotated[UserManager, Depends(get_user_manager)]
 
 
 
-# Movie repo
-def get_movies_repo(session: SessionDep) -> MoviesRepo:
-    return MoviesRepo(session)
-
-MovieRepoDep = Annotated[MoviesRepo, Depends(get_movies_repo)]
-
-# Movie TMDB-Client
-async def get_tmdb_client(client: HttpClientDep) -> TMDBClient:
+# _____TMDB-Client_____
+def get_tmdb_client(client: HttpClientDep) -> TMDBClient:
     return TMDBClient(client)
 
 TMDBClientDep = Annotated[TMDBClient, Depends(get_tmdb_client)]
 
-# Movie manager
-async def get_movie_manager(
+
+
+# _____Diary repo_____
+def get_repo(session: SessionDep) -> DiaryRepo:
+    return DiaryRepo(session)
+
+DiaryRepoDep = Annotated[DiaryRepo, Depends(get_repo)]
+
+
+
+# _____Manager_____
+async def get_manager(
     tmdbclient: TMDBClientDep,
     users_repo: UserRepoDep,
-    movies_repo: MovieRepoDep,
+    diary_repo: DiaryRepoDep,
     current_user: CurrentUser
-) -> MoviesManager:
-    return MoviesManager(tmdbclient, users_repo, movies_repo, current_user)
+) -> Manager:
+    return Manager(
+        {
+            MediaType.movie: tmdbclient
+        },
+        users_repo,
+        diary_repo,
+        current_user
+    )
 
-# Get watchlist query
-GetWatchlistQuery = Annotated[WatchlistQuery, Depends()]
+ManagerDep = Annotated[Manager, Depends(get_manager)]
 
-# Get watched query
-GetWatchedQuery = Annotated[WatchedQuery, Depends()]
 
-MovieManagerDep = Annotated[MoviesManager, Depends(get_movie_manager)]
+
+# _____Get watchlist query_____
+GetWishlistQuery = Annotated[WishlistQuery, Depends()]
+
+# _____Get watched query_____
+GetCompletedQuery = Annotated[CompletedQuery, Depends()]
+
+# _____Search query_____
+GetSearchQuery = Annotated[SearchQuery, Depends()]

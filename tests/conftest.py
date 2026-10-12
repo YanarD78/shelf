@@ -1,14 +1,11 @@
-from httpx import ASGITransport, AsyncClient
 import pytest_asyncio
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncEngine, AsyncSession
-from typing import AsyncIterator
-import respx
-
-from app.database import Base
-from app.config import settings
-from app.api.deps import get_session
 from app.main import app
-from tests.handlers.tmdb import mock_get_movie
+from app.api.deps import get_http_client, get_session
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, AsyncEngine, async_sessionmaker
+from app.config import settings
+from app.database import Base
+from collections.abc import AsyncIterator
 
 
 
@@ -16,6 +13,7 @@ from tests.handlers.tmdb import mock_get_movie
 async def engine():
     engine = create_async_engine(settings.test_db)
     async with engine.begin() as connection:
+        await connection.run_sync(Base.metadata.drop_all)
         await connection.run_sync(Base.metadata.create_all)
     yield engine
     await engine.dispose()
@@ -25,13 +23,11 @@ async def db_session(engine: AsyncEngine) -> AsyncIterator[AsyncSession]:
     connection = await engine.connect()
     transaction = await connection.begin()
 
-    async_session_maker = async_sessionmaker(
+    session = AsyncSession(
         bind=connection,
-        class_=AsyncSession,
         expire_on_commit=False,
-        join_transaction_mode="create_savepoint",
+        join_transaction_mode="create_savepoint"
     )
-    session = async_session_maker()
 
     yield session
 
@@ -39,65 +35,65 @@ async def db_session(engine: AsyncEngine) -> AsyncIterator[AsyncSession]:
     await transaction.rollback()
     await connection.close()
 
-@pytest_asyncio.fixture(autouse=True)
-def mock_external_apis():
-    with respx.mock:
-        yield
+@pytest_asyncio.fixture
+async def http_client(respx_mock) -> AsyncIterator[AsyncClient]:
+    async with AsyncClient(timeout=10) as http:
+        yield http
 
 @pytest_asyncio.fixture
-async def client(db_session):
+async def client(http_client, db_session):
+    app.dependency_overrides[get_http_client] = lambda: http_client
     app.dependency_overrides[get_session] = lambda: db_session
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="https://test") as client:
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
         yield client
     app.dependency_overrides.clear()
 
 
 
 @pytest_asyncio.fixture
-async def registred_user(client: AsyncClient):
-    payload = {
+def payload() -> dict:
+    return {
         "username": "string",
-        "email": "user@example.com",
+        "email": "test@example.com",
         "password": "stringst"
     }
-    await client.post("/auth/register", json=payload)
-    return payload
 
 @pytest_asyncio.fixture
-async def auth_headers(client: AsyncClient, registred_user):
+async def registered_user(client: AsyncClient, payload: dict):
+    response = await client.post(
+        "/auth/register",
+        json=payload
+    )
+    assert response.status_code == 201
+
+@pytest_asyncio.fixture
+async def auth_headers(client: AsyncClient, payload: dict, registered_user):
     response = await client.post(
         "/auth/login",
         json={
-            "email": registred_user["email"],
-            "password": registred_user["password"]
+            "email": payload["email"],
+            "password": payload["password"]
         }
     )
-    token = response.json()["access_token"]
-    return {"Authorization": f"Bearer {token}"}
+    assert response.status_code == 200
+    return {"Authorization": f"Bearer {response.json()["access_token"]}"}
+
+
 
 @pytest_asyncio.fixture
-async def add_watchlist(client: AsyncClient, auth_headers):
-    mock_get_movie()
-    await client.post(
-        "/movies/watchlist",
-        headers=auth_headers,
-        json={
-            "external_id": 550
-        }
-    )
+def get_watchlist_json():
+    return {
+        "external_id": "550",
+        "note": "string"
+    }
 
 @pytest_asyncio.fixture
-async def add_watched(client: AsyncClient, auth_headers):
-    mock_get_movie()
-    await client.post(
-        "/movies/watched",
-        headers=auth_headers,
-        json={
-            "external_id": 550,
-            "first_watch": True,
-            "watched_at": "2026-09-14",
-            "rating": 9.8,
-            "comment": "string"
-        }
-    )
+def get_watched_json():
+    return {
+        "external_id": "550",
+        "is_first": True,
+        "completed_on": "2026-10-11",
+        "rating": 10,
+        "comment": "string"
+    }

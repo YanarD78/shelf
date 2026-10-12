@@ -1,9 +1,7 @@
 from app.database import Base
-
-from datetime import datetime
-
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import String, func, ForeignKey
+from datetime import datetime
 
 class Users(Base):
     __tablename__ = "users"
@@ -17,4 +15,3 @@ class Preferences(Base):
     __tablename__ = "users_preferences"
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
     include_adult: Mapped[bool] = mapped_column(default=False)
-    language: Mapped[str | None] = mapped_column(default="en-US")

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, status
-from app.api.deps import UserManagerDep, ResolveLang
+from app.api.deps import UserManagerDep
 from app.schemas.auth import RegistrationRequest, RegistrationResponse, LoginRequest, RefreshRequest, LoginResponse
 
 
@@ -9,9 +9,8 @@ router = APIRouter(prefix="/auth", tags=["user"])
 
 
 @router.post("/register", response_model=RegistrationResponse, status_code=status.HTTP_201_CREATED)
-async def registration(data: RegistrationRequest, language: ResolveLang, manager: UserManagerDep):
-    language = data.language or language
-    result = await manager.register_user(email=data.email, username=data.username, password=data.password, language=language)
+async def registration(data: RegistrationRequest, manager: UserManagerDep):
+    result = await manager.register_user(email=data.email, username=data.username, password=data.password)
     return result
 
 @router.post("/login", response_model=LoginResponse)

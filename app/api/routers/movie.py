@@ -1,7 +1,8 @@
 from fastapi import APIRouter, status
-from app.api.deps import MovieManagerDep, GetWatchlistQuery, GetWatchedQuery
-from app.schemas.movie import SearchedFilm, GetWatchlistOut, PostWatchlistRequest, PostWatchlistResponse, PostWatchedResponse, PostWatchedRequest, GetWatchedOut
-from app.dto.dto import WatchlistFilter, WatchedFilter
+from app.api.deps import ManagerDep, GetWishlistQuery, GetCompletedQuery, GetSearchQuery
+from app.schemas.movie import SearchedMovie, Movie, GetWishlistOut, GetCompletedOut, PostCompletedRequest, PostCompletedResponse, PostWishlistRequest, PostWishlistResponse
+from app.dto.filters import WishlistFilter, CompletedFilter
+from app.models.media import MediaType
 
 
 
@@ -9,41 +10,42 @@ router = APIRouter(prefix="/movies", tags=["movie"])
 
 
 
-@router.get("/search", response_model=list[SearchedFilm])
-async def search_movie(query: str, manager: MovieManagerDep):
-    result = await manager.search_movie(query=query)
-    return result
+@router.get("/search", response_model=list[SearchedMovie])
+async def search_movie(data: GetSearchQuery, manager: ManagerDep):
+    return await manager.search_items(type_of=MediaType.movie, query=data.query, page=data.page)
+
+@router.get("/item/{external_id}", response_model=Movie)
+async def get_movie_item(external_id: str, manager: ManagerDep):
+    result = await manager.get_item(type_of=MediaType.movie, external_id=external_id)
+    return Movie.from_external(result)
 
 
 
-@router.get("/watchlist", response_model=list[GetWatchlistOut])
-async def get_watchlist(query: GetWatchlistQuery, manager: MovieManagerDep):
-    filters = WatchlistFilter(**query.model_dump())
-    result = await manager.get_watchlist(filters=filters)
-    return result
+@router.get("/watchlist", response_model=list[GetWishlistOut])
+async def get_watchlist(query: GetWishlistQuery, manager: ManagerDep):
+    filters = WishlistFilter(**query.model_dump())
+    return await manager.get_wishlist(type_of=MediaType.movie, filters=filters)
 
-@router.post("/watchlist", response_model=PostWatchlistResponse)
-async def add_to_watchlist(data: PostWatchlistRequest, manager: MovieManagerDep):
-    result = await manager.add_to_watchlist(external_id=data.external_id)
-    return result
+@router.post("/watchlist", response_model=PostWishlistResponse, status_code=status.HTTP_201_CREATED)
+async def add_to_watchlist(data: PostWishlistRequest, manager: ManagerDep):
+    return await manager.add_to_wishlist(type_of=MediaType.movie, external_id=data.external_id, note=data.note)
+    
 
 @router.delete("/watchlist/{local_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_from_watchlist(local_id: int, manager: MovieManagerDep):
-    await manager.delete_from_watchlist(local_id=local_id)
+async def delete_from_watchlist(local_id: int, manager: ManagerDep):
+    await manager.delete_from_wishlist(local_id=local_id)
 
 
 
-@router.get("/watched", response_model=list[GetWatchedOut])
-async def get_watched(query: GetWatchedQuery, manager: MovieManagerDep):
-    filters = WatchedFilter(**query.model_dump())
-    result = await manager.get_watched(filters=filters)
-    return result
+@router.get("/watched", response_model=list[GetCompletedOut])
+async def get_watched(query: GetCompletedQuery, manager: ManagerDep):
+    filters = CompletedFilter(**query.model_dump())
+    return await manager.get_completed(type_of=MediaType.movie, filters=filters)
 
-@router.post("/watched", response_model=PostWatchedResponse)
-async def add_to_watched(data: PostWatchedRequest, manager: MovieManagerDep):
-    result = await manager.add_to_watched(external_id=data.external_id, first_watch=data.first_watch, watched_at=data.watched_at, rating=data.rating, comment=data.comment)
-    return result
+@router.post("/watched", response_model=PostCompletedResponse, status_code=status.HTTP_201_CREATED)
+async def add_to_watched(data: PostCompletedRequest, manager: ManagerDep):
+    return await manager.add_to_completed(type_of=MediaType.movie, external_id=data.external_id, is_first=data.is_first, completed_on=data.completed_on, rating=data.rating, comment=data.comment)
 
 @router.delete("/watched/{row_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_from_watched(row_id: int, manager: MovieManagerDep):
-    await manager.delete_from_watched(row_id=row_id)
+async def delete_from_watched(row_id: int, manager: ManagerDep):
+    await manager.delete_from_completed(row_id=row_id)

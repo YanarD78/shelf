@@ -1,4 +1,3 @@
-from fastapi.security import HTTPBearer
 import jwt
 import bcrypt
 from datetime import datetime, timezone, timedelta
@@ -65,10 +64,6 @@ def decode_access_token(token: str) -> int:
 
 def decode_refresh_token(token: str) -> int:
     return _decode_token(token=token, expected_type="refresh")
-
-
-
-security = HTTPBearer(auto_error=False)
 
 
 

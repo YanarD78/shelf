@@ -1,0 +1,6 @@
+from app.dto.external import ExternalItem
+from typing import Protocol
+
+class MediaProvider(Protocol):
+    async def search(self, query: str, include_adult: bool, page: int) -> list[ExternalItem]: ...
+    async def get(self, external_id: str) -> ExternalItem: ...

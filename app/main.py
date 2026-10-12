@@ -3,22 +3,27 @@ import logging
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from app.core.exceptions import AppError
-from app.database import engine, Base
+from app.database import engine
 from app.api.routers.user import router as users_router
 from app.api.routers.movie import router as movies_router
+from httpx import AsyncClient
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    app.state.http = AsyncClient(timeout=10)
     yield
+    await app.state.http.aclose()
     await engine.dispose()
 
 app = FastAPI(lifespan=lifespan)
 
 @app.exception_handler(AppError)
 async def app_error_handler(request, exc: AppError):
-    return JSONResponse(status_code=exc.status_code, content={"detail": str(exc)})
+    headers = {"WWW-Authenticate": "Bearer"} if exc.status_code == 401 else None
+    return JSONResponse(status_code=exc.status_code, content={"detail": str(exc)}, headers=headers)
 
 @app.exception_handler(Exception)
 async def unhandled_error_handler(request, exc: Exception):

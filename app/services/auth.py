@@ -1,28 +1,29 @@
 from fastapi.concurrency import run_in_threadpool
-from app.repositories.user import UsersRepo
+from app.repositories.user import UserRepo
 from app.core.exceptions import InvalidCredentialsError
 from app.core.security import create_tokens, hash_password, check_password, decode_refresh_token
 
 fake_hash = hash_password("password1234")
 
-class UsersManager:
+class UserManager:
     """A class designed for user registration and authorization"""
-    def __init__(self, repo: UsersRepo):
+    def __init__(self, repo: UserRepo):
         self.repo = repo
 
-    async def register_user(self, email: str, username: str, password: str, language: str) -> dict:
+        
+
+    async def register_user(self, email: str, username: str, password: str) -> dict:
         hashed_password = await run_in_threadpool(hash_password, password)
         user_id = await self.repo.add_user_with_preferences(
             username=username,
             email=email.strip().lower(),
-            password=hashed_password,
-            lang=language
+            password=hashed_password
         )
 
         return {"id": user_id, "message": "User created successfully"}
 
     async def login(self, email: str, password: str) -> dict:
-        user = await self.repo.find_user(email=email)
+        user = await self.repo.find_user(email=email.strip().lower())
         to_check = user.password if user else fake_hash
         
         is_password_correct = await run_in_threadpool(check_password, password, to_check)
@@ -37,7 +38,7 @@ class UsersManager:
         }
 
     async def refresh_token(self, token: str) -> dict:
-        user_id = await run_in_threadpool(decode_refresh_token, token)
+        user_id = decode_refresh_token(token=token)
         user = await self.repo.find_user_by_id(user_id=user_id)
         if user is None:
             raise InvalidCredentialsError("User no longer exists")
