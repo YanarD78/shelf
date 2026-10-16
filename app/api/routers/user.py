@@ -4,7 +4,7 @@ from app.schemas.auth import RegistrationRequest, RegistrationResponse, LoginReq
 
 
 
-router = APIRouter(prefix="/auth", tags=["user"])
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 

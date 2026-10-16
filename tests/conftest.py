@@ -95,5 +95,5 @@ def get_watched_json():
         "is_first": True,
         "completed_on": "2026-10-11",
         "rating": 10,
-        "comment": "string"
+        "comment": "string",
     }

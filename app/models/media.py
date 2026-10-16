@@ -23,6 +23,7 @@ class ContentItem(Base):
     title: Mapped[str] = mapped_column(String(500), nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
     cover_url: Mapped[str | None] = mapped_column(String(500))
+    vote_average: Mapped[float | None]
     release_date: Mapped[date | None]
 
     external_id: Mapped[str] = mapped_column(nullable=False)
@@ -46,7 +47,7 @@ class Movie(ContentItem):
     __tablename__ = "movie"
     media_id: Mapped[int] = mapped_column(ForeignKey("content_item.id", ondelete="CASCADE"), primary_key=True)
     runtime_minutes: Mapped[int | None]
-    backdrop_path: Mapped[str | None] = mapped_column(String(500))
+    backdrop_url: Mapped[str | None] = mapped_column(String(500))
     genres: Mapped[list] = mapped_column(ARRAY(String))
 
     __mapper_args__ = {"polymorphic_identity": "movie", "polymorphic_load": "selectin"}

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, status
 from app.api.deps import ManagerDep, GetWishlistQuery, GetCompletedQuery, GetSearchQuery
-from app.schemas.movie import SearchedMovie, Movie, GetWishlistOut, GetCompletedOut, PostCompletedRequest, PatchWishlistRequest, PatchCompletedRequest, PostCompletedResponse, PostWishlistRequest, PostWishlistResponse
+from app.schemas.movie import SearchedMovie, Movie, GetWishlistList, GetWishlistItem, GetCompletedList, GetCompletedItem, PostCompletedRequest, PatchWishlistRequest, PatchCompletedRequest, PostCompletedResponse, PostWishlistRequest, PostWishlistResponse
 from app.dto.filters import WishlistFilter, CompletedFilter
 from app.models.media import MediaType
 
@@ -21,18 +21,22 @@ async def get_movie_item(external_id: str, manager: ManagerDep):
 
 
 
-@router.get("/watchlist", response_model=list[GetWishlistOut])
+@router.get("/watchlist", response_model=list[GetWishlistList])
 async def get_watchlist(query: GetWishlistQuery, manager: ManagerDep):
     filters = WishlistFilter(**query.model_dump())
     return await manager.get_wishlist(type_of=MediaType.movie, filters=filters)
+
+@router.get("/watchlist/{row_id}", response_model=GetWishlistItem)
+async def get_watchlist_item(row_id: int, manager: ManagerDep):
+    return await manager.get_wishlist_item(type_of=MediaType.movie, row_id=row_id)
 
 @router.post("/watchlist", response_model=PostWishlistResponse, status_code=status.HTTP_201_CREATED)
 async def add_to_watchlist(data: PostWishlistRequest, manager: ManagerDep):
     return await manager.add_to_wishlist(type_of=MediaType.movie, external_id=data.external_id, note=data.note)
 
-@router.patch("/watchlist/{local_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def edit_watchlist(local_id: int, data: PatchWishlistRequest, manager: ManagerDep):
-    await manager.edit_wishlist(local_id=local_id, note=data.note)
+@router.patch("/watchlist/{row_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def edit_watchlist(row_id: int, data: PatchWishlistRequest, manager: ManagerDep):
+    await manager.edit_wishlist(row_id=row_id, note=data.note)
 
 @router.delete("/watchlist/{local_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_from_watchlist(local_id: int, manager: ManagerDep):
@@ -40,10 +44,14 @@ async def delete_from_watchlist(local_id: int, manager: ManagerDep):
 
 
 
-@router.get("/watched", response_model=list[GetCompletedOut])
+@router.get("/watched", response_model=list[GetCompletedList])
 async def get_watched(query: GetCompletedQuery, manager: ManagerDep):
     filters = CompletedFilter(**query.model_dump())
     return await manager.get_completed(type_of=MediaType.movie, filters=filters)
+
+@router.get("/watched/{row_id}", response_model=GetCompletedItem)
+async def get_watched_item(row_id: int, manager: ManagerDep):
+    return await manager.get_completed_item(type_of=MediaType.movie, row_id=row_id)
 
 @router.post("/watched", response_model=PostCompletedResponse, status_code=status.HTTP_201_CREATED)
 async def add_to_watched(data: PostCompletedRequest, manager: ManagerDep):

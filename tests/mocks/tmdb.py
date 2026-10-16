@@ -33,7 +33,7 @@ def mock_get_movie(router: respx.MockRouter, query: int = 550):
                 "poster_path": "/pp123124124",
                 "vote_average": 8.4,
                 "runtime": 120,
-                "backdrop_path": "/bp1213241",
+                "backdrop_url": "/bp1213241",
                 "genres": [
                     {"id": 1, "name": "thriller"},
                     {"id": 2, "name": "drama"}

@@ -1,11 +1,10 @@
-from fastapi import Depends, Request, Query
+from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from httpx import AsyncClient
 from app.database import async_session_maker
 from app.models.media import MediaType
 from app.repositories.user import UserRepo
 from app.repositories.diary import DiaryRepo
-from app.config import settings
 from app.services.auth import UserManager
 from app.services.diary import Manager
 from app.providers.tmdb import TMDBClient
@@ -87,7 +86,7 @@ DiaryRepoDep = Annotated[DiaryRepo, Depends(get_repo)]
 
 
 # _____Manager_____
-async def get_manager(
+def get_manager(
     tmdbclient: TMDBClientDep,
     users_repo: UserRepoDep,
     diary_repo: DiaryRepoDep,

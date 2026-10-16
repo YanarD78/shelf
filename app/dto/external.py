@@ -5,7 +5,7 @@ from datetime import date
 class ExternalItem:
     external_id: str
     title: str
-    overview: str | None
+    description: str | None
     release_date: date | None
     cover_url: str | None
     vote_average: float | None

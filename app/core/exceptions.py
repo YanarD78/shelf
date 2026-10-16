@@ -25,7 +25,7 @@ class TokenExpiredError(AppError):
 
 class InvalidTokenError(AppError):
     status_code = 401
-    detail = "Could not validate credentials"
+    detail = "Not authenticated"
 
 
 

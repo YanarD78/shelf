@@ -19,7 +19,7 @@ async def test_search_movies_without_token(client: AsyncClient, respx_mock):
         headers={"Authorization": "Bearer wrong token"}
     )
     assert response.status_code == 401
-    assert "credentials" in response.json()["detail"]
+    assert "authenticated" in response.json()["detail"]
 
 
 

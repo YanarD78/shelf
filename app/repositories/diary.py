@@ -5,6 +5,8 @@ from app.models.media import ContentItem, Movie
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import insert, delete, select, update, func
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.orm import contains_eager, load_only
 from datetime import date
 from typing import Sequence
 from app.models.media import MediaType, ExternalType
@@ -28,13 +30,10 @@ class DiaryRepo:
 
 
     async def get_item(self, type_of: MediaType, external_id: str) -> int | None:
-        stmt = select(ContentItem.id).where(
-            ContentItem.media_type==type_of
-        ).where(
-            ContentItem.external_id==external_id
-        ).where(
-            ContentItem.source==SOURCE_BY_TYPE[type_of]
-        )
+        stmt = (select(ContentItem.id)
+            .where(ContentItem.media_type==type_of)
+            .where(ContentItem.external_id==external_id)
+            .where(ContentItem.source==SOURCE_BY_TYPE[type_of]))
         result = await self.session.execute(stmt)
         return result.scalar()
 
@@ -45,8 +44,9 @@ class DiaryRepo:
         obj = model(
             media_type=type_of,
             title=item.title,
-            description=item.overview,
+            description=item.description,
             cover_url=item.cover_url,
+            vote_average=item.vote_average,
             release_date=item.release_date,
             external_id=item.external_id,
             source=SOURCE_BY_TYPE[type_of],
@@ -63,8 +63,27 @@ class DiaryRepo:
 
 
 
-    async def get_wishlist(self, type_of: MediaType, user_id: int, filters: WishlistFilter) -> Sequence:
-        stmt = select(Wishlist).join(ContentItem).where(Wishlist.user_id == user_id).where(ContentItem.media_type==type_of)
+    async def get_wishlist(self, type_of: MediaType, user_id: int, filters: WishlistFilter) -> Sequence[Wishlist]:
+        stmt = (select(Wishlist)
+            .join(Wishlist.content)
+            .options(
+                load_only(
+                    Wishlist.id,
+                    Wishlist.local_id,
+                    Wishlist.note,
+                    Wishlist.created_at
+                ),
+                contains_eager(Wishlist.content).load_only(
+                    ContentItem.external_id,
+                    ContentItem.title,
+                    ContentItem.description,
+                    ContentItem.release_date,
+                    ContentItem.cover_url,
+                    ContentItem.vote_average
+                )
+            )
+            .where(Wishlist.user_id == user_id)
+            .where(ContentItem.media_type==type_of))
 
         if filters.added_before is not None:
             stmt = stmt.where(func.date(Wishlist.created_at) < filters.added_before)
@@ -85,29 +104,34 @@ class DiaryRepo:
         if filters.offset is not None:
             stmt = stmt.offset(offset=filters.offset)
 
-        stmt = stmt.order_by(Wishlist.created_at.desc())
+        stmt = stmt.order_by(Wishlist.created_at.desc()).order_by(Wishlist.id.desc())
         result = await self.session.execute(stmt)
         return result.scalars().all()
 
-    async def add_to_wishlist(self, user_id: int, local_id: int, note: str | None) -> int:
-        try:
-            stmt = insert(Wishlist).values(
-                user_id=user_id,
-                local_id=local_id,
-                note=note
-            ).returning(Wishlist.id)
-            result = await self.session.execute(stmt)
-            return result.scalar_one()
-        except IntegrityError:
-            raise RecordAlreadyExists()
+    async def get_wishlist_item(self, type_of: MediaType, user_id: int, row_id: int) -> Wishlist | None:
+        stmt = (select(Wishlist)
+            .join(Wishlist.content)
+            .options(contains_eager(Wishlist.content))
+            .where(Wishlist.user_id == user_id, Wishlist.id == row_id)
+            .where(ContentItem.media_type == type_of))
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
 
-    async def edit_wishlist(self, user_id: int, local_id: int, note: str) -> int:
-        stmt = update(Wishlist).where(
-            Wishlist.user_id==user_id,
-            Wishlist.local_id==local_id
-        ).values(
-            note=note
-        ).returning(Wishlist.id)
+    async def add_to_wishlist(self, user_id: int, local_id: int, note: str | None) -> int:
+        stmt = (pg_insert(Wishlist)
+            .values(user_id=user_id, local_id=local_id, note=note)
+            .on_conflict_do_nothing(constraint="uq_wishlist_user")
+            .returning(Wishlist.id))
+        result = (await self.session.execute(stmt)).scalar_one_or_none()
+        if result is None:
+            raise RecordAlreadyExists()
+        return result
+
+    async def edit_wishlist(self, user_id: int, row_id: int, note: str | None) -> int | None:
+        stmt = (update(Wishlist)
+            .where(Wishlist.user_id==user_id, Wishlist.id==row_id)
+            .values(note=note)
+            .returning(Wishlist.id))
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
@@ -122,7 +146,28 @@ class DiaryRepo:
 
 
     async def get_completed(self, type_of: str, user_id: int, filters: CompletedFilter) -> Sequence:
-        stmt = select(Completed).join(ContentItem).where(Completed.user_id == user_id).where(ContentItem.media_type == type_of)
+        stmt = (select(Completed)
+            .join(Completed.content)
+            .options(
+                load_only(
+                    Completed.id,
+                    Completed.local_id,
+                    Completed.is_first,
+                    Completed.rating,
+                    Completed.completed_on,
+                    Completed.comment,
+                    Completed.created_at
+                ),
+                contains_eager(Completed.content).load_only(
+                    ContentItem.external_id,
+                    ContentItem.title,
+                    ContentItem.description,
+                    ContentItem.release_date,
+                    ContentItem.cover_url,
+                    ContentItem.vote_average
+                ))
+            .where(Completed.user_id == user_id)
+            .where(ContentItem.media_type == type_of))
         
         if filters.local_id is not None:
             stmt = stmt.where(Completed.local_id == filters.local_id)
@@ -139,9 +184,18 @@ class DiaryRepo:
         if filters.offset is not None:
             stmt = stmt.offset(offset=filters.offset)
 
-        stmt = stmt.order_by(Completed.completed_on.desc().nulls_last())
+        stmt = stmt.order_by(Completed.completed_on.desc().nulls_last()).order_by(Completed.id.desc())
         result = await self.session.execute(stmt)
-        return result.scalars().all()
+        return result.unique().scalars().all()
+
+    async def get_completed_item(self, type_of: MediaType, user_id: int, row_id: int) -> Completed | None:
+        stmt = (select(Completed)
+            .join(Completed.content)
+            .options(contains_eager(Completed.content))
+            .where(Completed.user_id == user_id, Completed.id == row_id)
+            .where(ContentItem.media_type == type_of))
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
 
     async def add_to_completed(self, user_id: int, local_id: int, is_first: bool, completed_on: date | None, rating: float | None, comment: str | None) -> int:
         if is_first:
@@ -149,9 +203,7 @@ class DiaryRepo:
                 Completed.user_id==user_id,
                 Completed.local_id==local_id,
                 Completed.is_first==is_first
-            ).values(
-                is_first=False
-            )
+            ).values(is_first=False)
             await self.session.execute(update_stmt)
 
         stmt = insert(Completed).values(
@@ -165,13 +217,11 @@ class DiaryRepo:
         result = await self.session.execute(stmt)
         return result.scalar_one()
 
-    async def edit_completed(self, user_id: int, row_id: int, data: dict) -> int:
+    async def edit_completed(self, user_id: int, row_id: int, data: dict) -> int | None:
         stmt = update(Completed).where(
             Completed.user_id==user_id,
             Completed.id==row_id
-        ).values(
-            **data
-        ).returning(Completed.id)
+        ).values(**data).returning(Completed.id)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 

@@ -53,18 +53,18 @@ class TMDBClient:
         return ExternalItem(
             external_id=str(m["id"]),
             title=m["title"],
-            overview=m.get("overview") or None,
+            description=m.get("overview") or None,
             release_date=date.fromisoformat(m["release_date"]) if m.get("release_date") else None,
             cover_url=self._to_img(m.get("poster_path")),
             vote_average=m.get("vote_average"),
             extra={
                 "runtime_minutes": m.get("runtime") or None,
-                "backdrop_path": self._to_img(m.get("backdrop_path"), "w1280"),
+                "backdrop_url": self._to_img(m.get("backdrop_path"), "w1280"),
                 "genres": self.genres_to_list(m.get("genres"))
             }
         )
 
-    def genres_to_list(self, genres: dict) -> list:
+    def genres_to_list(self, genres: list[dict]) -> list:
         return [g["name"] for g in genres] if genres else []
 
     def _to_img(self, path: str | None, size: str = "w500") -> str | None:

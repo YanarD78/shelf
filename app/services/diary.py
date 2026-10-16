@@ -42,7 +42,12 @@ class Manager:
 
 
     async def get_wishlist(self, type_of: MediaType, filters: WishlistFilter) -> Sequence:
-        result = await self.diary_repo.get_wishlist(type_of=type_of, user_id=self.user, filters=filters)
+        return await self.diary_repo.get_wishlist(type_of=type_of, user_id=self.user, filters=filters)
+
+    async def get_wishlist_item(self, type_of: MediaType, row_id: int):
+        result = await self.diary_repo.get_wishlist_item(type_of=type_of, user_id=self.user, row_id=row_id)
+        if result is None:
+            raise ItemNotFound
         return result
 
     async def add_to_wishlist(self, type_of: MediaType, external_id: str, note: str | None) -> dict[str, int]:
@@ -54,8 +59,8 @@ class Manager:
         )
         return {"id": result, "local_id": local_id}
 
-    async def edit_wishlist(self, local_id: str, note: str) -> None:
-        result = await self.diary_repo.edit_wishlist(user_id=self.user, local_id=local_id, note=note)
+    async def edit_wishlist(self, row_id: int, note: str | None) -> None:
+        result = await self.diary_repo.edit_wishlist(user_id=self.user, row_id=row_id, note=note)
         if result is None:
             raise ItemNotFound()
 
@@ -67,7 +72,12 @@ class Manager:
 
 
     async def get_completed(self, type_of: MediaType, filters: CompletedFilter) -> Sequence:
-        result = await self.diary_repo.get_completed(type_of=type_of, user_id=self.user, filters=filters)
+        return await self.diary_repo.get_completed(type_of=type_of, user_id=self.user, filters=filters)
+
+    async def get_completed_item(self, type_of: MediaType, row_id: int):
+        result = await self.diary_repo.get_completed_item(type_of=type_of, user_id=self.user, row_id=row_id)
+        if result is None:
+            raise ItemNotFound
         return result
 
     async def add_to_completed(self, type_of: MediaType, external_id: str, is_first: bool, completed_on: date | None, rating: float | None, comment: str | None) -> dict[str, int]:
@@ -82,7 +92,7 @@ class Manager:
         )
         return {"id": result, "local_id": local_id}
 
-    async def edit_watched(self, row_id: str, data: dict) -> None:
+    async def edit_watched(self, row_id: int, data: dict) -> None:
         result = await self.diary_repo.edit_completed(
             user_id=self.user,
             row_id=row_id,
