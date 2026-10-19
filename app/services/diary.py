@@ -27,13 +27,14 @@ class Manager:
 
 
 
-    async def search_items(self, type_of: MediaType, query: str, page: int) -> list[ExternalItem]:
+    async def search_items(self, type_of: MediaType, query: str, page: int, year: int | None) -> list[ExternalItem]:
         preferences = await self.users_repo.get_user_preferences(user_id=self.user)
 
         return await self.providers[type_of].search(
             query=query,
             include_adult=preferences.include_adult,
-            page=page
+            page=page,
+            year=year
         )
 
     async def get_item(self, type_of: MediaType, external_id: str) -> ExternalItem:

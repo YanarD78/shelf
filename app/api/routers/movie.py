@@ -12,7 +12,7 @@ router = APIRouter(prefix="/movies", tags=["movie"])
 
 @router.get("/search", response_model=list[SearchedMovie])
 async def search_movie(data: GetSearchQuery, manager: ManagerDep):
-    return await manager.search_items(type_of=MediaType.movie, query=data.query, page=data.page)
+    return await manager.search_items(type_of=MediaType.movie, query=data.query, page=data.page, year=data.year)
 
 @router.get("/item/{external_id}", response_model=Movie)
 async def get_movie_item(external_id: str, manager: ManagerDep):

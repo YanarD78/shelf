@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 from dataclasses import asdict
 from app.dto.external import ExternalItem
 from datetime import date, datetime
@@ -44,6 +44,14 @@ class Book(BaseContent):
 class SearchQuery(BaseModel):
     query: str = Field(min_length=2, max_length=100)
     page: int = Field(default=1, ge=1, le=500)
+    year: int | None = Field(default=None, ge=1880)
+
+    @field_validator("year")
+    @classmethod
+    def year_not_too_far(cls, v: int | None) -> int | None:
+        if v is not None and v > date.today().year + 10:
+            raise ValueError("Year is too far in the future")
+        return v
 
 
 

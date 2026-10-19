@@ -1,4 +1,4 @@
-from fastapi import Depends, Request
+from fastapi import Depends, Query, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from httpx import AsyncClient
 from app.database import async_session_maker
@@ -106,10 +106,10 @@ ManagerDep = Annotated[Manager, Depends(get_manager)]
 
 
 # _____Get watchlist query_____
-GetWishlistQuery = Annotated[WishlistQuery, Depends()]
+GetWishlistQuery = Annotated[WishlistQuery, Query()]
 
 # _____Get watched query_____
-GetCompletedQuery = Annotated[CompletedQuery, Depends()]
+GetCompletedQuery = Annotated[CompletedQuery, Query()]
 
 # _____Search query_____
-GetSearchQuery = Annotated[SearchQuery, Depends()]
+GetSearchQuery = Annotated[SearchQuery, Query()]

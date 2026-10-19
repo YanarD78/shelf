@@ -35,8 +35,8 @@ class TMDBClient:
 
         
 
-    async def search(self, query: str, include_adult: bool, page: int) -> list[ExternalItem]:
-        data = await self._get(path="/3/search/movie", query=query, include_adult=include_adult, page=page)
+    async def search(self, query: str, include_adult: bool, page: int, year: int | None) -> list[ExternalItem]:
+        data = await self._get(path="/3/search/movie", query=query, include_adult=include_adult, page=page, year=year)
         results = data["results"]
         return [self._to_item(m) for m in results]
 
