@@ -8,9 +8,12 @@ from app.repositories.diary import DiaryRepo
 from app.services.auth import UserManager
 from app.services.diary import Manager
 from app.providers.tmdb import TMDBClient
+from app.providers.rawg import RAWGClient
 from app.core.security import decode_access_token
 from app.core.exceptions import InvalidTokenError
-from app.schemas.movie import WishlistQuery, CompletedQuery, SearchQuery
+from app.schemas.diary import WishlistQuery, CompletedQuery
+from app.schemas.movie import MovieSearchQuery
+from app.schemas.game import GameSearchQuery
 from sqlalchemy.ext.asyncio import AsyncSession
 from collections.abc import AsyncIterator
 from typing import Annotated
@@ -75,6 +78,12 @@ def get_tmdb_client(client: HttpClientDep) -> TMDBClient:
 
 TMDBClientDep = Annotated[TMDBClient, Depends(get_tmdb_client)]
 
+# _____RAWG-Client_____
+def get_rawg_client(client: HttpClientDep) -> RAWGClient:
+    return RAWGClient(client)
+
+RAWGClientDep = Annotated[RAWGClient, Depends(get_rawg_client)]
+
 
 
 # _____Diary repo_____
@@ -88,13 +97,15 @@ DiaryRepoDep = Annotated[DiaryRepo, Depends(get_repo)]
 # _____Manager_____
 def get_manager(
     tmdbclient: TMDBClientDep,
+    rawgclient: RAWGClientDep,
     users_repo: UserRepoDep,
     diary_repo: DiaryRepoDep,
     current_user: CurrentUser
 ) -> Manager:
     return Manager(
         {
-            MediaType.movie: tmdbclient
+            MediaType.movie: tmdbclient,
+            MediaType.game: rawgclient
         },
         users_repo,
         diary_repo,
@@ -111,5 +122,10 @@ GetWishlistQuery = Annotated[WishlistQuery, Query()]
 # _____Get watched query_____
 GetCompletedQuery = Annotated[CompletedQuery, Query()]
 
-# _____Search query_____
-GetSearchQuery = Annotated[SearchQuery, Query()]
+
+
+# _____Movie search query_____
+GetMovieSearchQuery = Annotated[MovieSearchQuery, Query()]
+
+# _____Game search query_____
+GetGameSearchQuery = Annotated[GameSearchQuery, Query()]

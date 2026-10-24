@@ -9,4 +9,4 @@ class ExternalItem:
     release_date: date | None
     cover_url: str | None
     vote_average: float | None
-    extra: dict
+    extra: dict | None

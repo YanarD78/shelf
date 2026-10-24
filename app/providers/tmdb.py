@@ -4,11 +4,12 @@ from app.core.exceptions import ExternalServerError, ItemNotFound
 from app.dto.external import ExternalItem
 from datetime import date
 
+BASE_TMDB_URL = "https://api.themoviedb.org"
+
 class TMDBClient:
     """A class designed to execute HTTP requests to the TMDB database"""
     def __init__(self, client: AsyncClient):
         self.client = client
-        self.base_url = settings.tmdb_url
         self.img_base = "https://image.tmdb.org/t/p"
         self.headers = {
             "Authorization": f"Bearer {settings.tmdb_token}",
@@ -20,7 +21,7 @@ class TMDBClient:
     async def _get(self, path: str, **params) -> dict:
         try:
             response = await self.client.get(
-                f"{self.base_url}{path}",
+                f"{BASE_TMDB_URL}{path}",
                 headers=self.headers,
                 params=params
             )
@@ -35,8 +36,8 @@ class TMDBClient:
 
         
 
-    async def search(self, query: str, include_adult: bool, page: int, year: int | None) -> list[ExternalItem]:
-        data = await self._get(path="/3/search/movie", query=query, include_adult=include_adult, page=page, year=year)
+    async def search(self, **kwargs) -> list[ExternalItem]:
+        data = await self._get(path="/3/search/movie", **kwargs)
         results = data["results"]
         return [self._to_item(m) for m in results]
 

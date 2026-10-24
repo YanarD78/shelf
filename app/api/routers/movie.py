@@ -1,6 +1,6 @@
 from fastapi import APIRouter, status
-from app.api.deps import ManagerDep, GetWishlistQuery, GetCompletedQuery, GetSearchQuery
-from app.schemas.movie import SearchedMovie, Movie, GetWishlistList, GetWishlistItem, GetCompletedList, GetCompletedItem, PostCompletedRequest, PatchWishlistRequest, PatchCompletedRequest, PostCompletedResponse, PostWishlistRequest, PostWishlistResponse
+from app.api.deps import ManagerDep, GetWishlistQuery, GetCompletedQuery, GetMovieSearchQuery
+from app.schemas.diary import SearchedMovie, Movie, GetWishlistList, GetWishlistItem, GetCompletedList, GetCompletedItem, PostCompletedRequest, PatchWishlistRequest, PatchCompletedRequest, PostCompletedResponse, PostWishlistRequest, PostWishlistResponse
 from app.dto.filters import WishlistFilter, CompletedFilter
 from app.models.media import MediaType
 
@@ -11,8 +11,8 @@ router = APIRouter(prefix="/movies", tags=["movie"])
 
 
 @router.get("/search", response_model=list[SearchedMovie])
-async def search_movie(data: GetSearchQuery, manager: ManagerDep):
-    return await manager.search_items(type_of=MediaType.movie, query=data.query, page=data.page, year=data.year)
+async def search_movie(data: GetMovieSearchQuery, manager: ManagerDep):
+    return await manager.search_items(type_of=MediaType.movie, **data.model_dump(exclude_none=True))
 
 @router.get("/item/{external_id}", response_model=Movie)
 async def get_movie_item(external_id: str, manager: ManagerDep):
@@ -59,7 +59,7 @@ async def add_to_watched(data: PostCompletedRequest, manager: ManagerDep):
 
 @router.patch("/watched/{row_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def edit_watched(row_id: int, data: PatchCompletedRequest, manager: ManagerDep):
-    await manager.edit_watched(row_id=row_id, data=data.model_dump(exclude_unset=True))
+    await manager.edit_completed(row_id=row_id, data=data.model_dump(exclude_unset=True))
 
 @router.delete("/watched/{row_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_from_watched(row_id: int, manager: ManagerDep):

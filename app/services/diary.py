@@ -27,15 +27,13 @@ class Manager:
 
 
 
-    async def search_items(self, type_of: MediaType, query: str, page: int, year: int | None) -> list[ExternalItem]:
-        preferences = await self.users_repo.get_user_preferences(user_id=self.user)
-
-        return await self.providers[type_of].search(
-            query=query,
-            include_adult=preferences.include_adult,
-            page=page,
-            year=year
-        )
+    async def search_items(self, type_of: MediaType, **kwargs) -> list[ExternalItem]:
+        match type_of:
+            case MediaType.movie:
+                preferences = await self.users_repo.get_user_preferences(user_id=self.user)
+                return await self.providers[MediaType.movie].search(include_adult=preferences.include_adult, **kwargs)
+            case MediaType.game:
+                return await self.providers[MediaType.game].search(**kwargs)
 
     async def get_item(self, type_of: MediaType, external_id: str) -> ExternalItem:
         return await self.providers[type_of].get(external_id=external_id)
@@ -93,7 +91,7 @@ class Manager:
         )
         return {"id": result, "local_id": local_id}
 
-    async def edit_watched(self, row_id: int, data: dict) -> None:
+    async def edit_completed(self, row_id: int, data: dict) -> None:
         result = await self.diary_repo.edit_completed(
             user_id=self.user,
             row_id=row_id,

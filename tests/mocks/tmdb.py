@@ -1,9 +1,10 @@
 import respx
-from app.config import settings
 import httpx
 
+BASE_TMDB_URL = "https://api.themoviedb.org"
+
 def mock_get_search(router: respx.MockRouter, query: str = "Fight Club"):
-    return router.get(f"{settings.tmdb_url}/3/search/movie", params={"query": query}).mock(
+    return router.get(f"{BASE_TMDB_URL}/3/search/movie", params={"query": query}).mock(
         return_value=httpx.Response(
             status_code=200,
             json={
@@ -22,7 +23,7 @@ def mock_get_search(router: respx.MockRouter, query: str = "Fight Club"):
     )
 
 def mock_get_movie(router: respx.MockRouter, query: int = 550):
-    return router.get(f"{settings.tmdb_url}/3/movie/{query}").mock(
+    return router.get(f"{BASE_TMDB_URL}/3/movie/{query}").mock(
         return_value=httpx.Response(
             status_code=200,
             json={

@@ -1,7 +1,7 @@
 from app.core.exceptions import RecordAlreadyExists
 from app.dto.filters import WishlistFilter, CompletedFilter
 from app.models.diary import Wishlist, Completed
-from app.models.media import ContentItem, Movie
+from app.models.media import ContentItem, Movie, Game
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import insert, delete, select, update, func
@@ -13,11 +13,13 @@ from app.models.media import MediaType, ExternalType
 from app.dto.external import ExternalItem
 
 MODEL_BY_TYPE: dict[MediaType, type[ContentItem]] = {
-    MediaType.movie: Movie
+    MediaType.movie: Movie,
+    MediaType.game: Game
 }
 
 SOURCE_BY_TYPE: dict[MediaType, ExternalType] = {
-    MediaType.movie: ExternalType.tmdb
+    MediaType.movie: ExternalType.tmdb,
+    MediaType.game: ExternalType.rawg
 }
 
 

@@ -5,8 +5,9 @@ from fastapi import FastAPI, Request
 from httpx import AsyncClient
 from app.core.exceptions import AppError
 from app.database import engine
-from app.api.routers.user import router as users_router
-from app.api.routers.movie import router as movies_router
+from app.api.routers.user import router as user_router
+from app.api.routers.movie import router as movie_router
+from app.api.routers.game import router as game_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -32,5 +33,6 @@ async def unhandled_error_handler(request: Request, exc: Exception):
     logger.exception("Unhandled error on %s %s", request.method, request.url)
     return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
-app.include_router(users_router)
-app.include_router(movies_router)
+app.include_router(user_router)
+app.include_router(movie_router)
+app.include_router(game_router)

@@ -1,6 +1,7 @@
 from app.database import Base
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import func, ForeignKey, UniqueConstraint, CheckConstraint, String, ARRAY, Text
+from sqlalchemy.dialects.postgresql import JSONB
 from datetime import datetime, date
 from enum import StrEnum
 
@@ -11,6 +12,7 @@ class MediaType(StrEnum):
 
 class ExternalType(StrEnum):
     tmdb = "tmdb"
+    rawg = "rawg"
 
 
 
@@ -57,9 +59,13 @@ class Game(ContentItem):
     __tablename__ = "game"
     media_id: Mapped[int] = mapped_column(ForeignKey("content_item.id", ondelete="CASCADE"), primary_key=True)
 
+    tba: Mapped[bool]
+    metacritic: Mapped[int | None]
+    playtime: Mapped[int]
     platforms: Mapped[list[str] | None] = mapped_column(ARRAY(String))
-    developer: Mapped[str | None] = mapped_column(String(200))
-    publisher: Mapped[str | None] = mapped_column(String(200))
+    genres: Mapped[list[str]] = mapped_column(ARRAY(String))
+    stores: Mapped[dict] = mapped_column(JSONB)
+    
 
     __mapper_args__ = {"polymorphic_identity": "game", "polymorphic_load": "selectin"}
     
