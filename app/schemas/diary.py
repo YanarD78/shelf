@@ -21,14 +21,14 @@ class GetWishlistItem(BaseModel):
 
 class PostWishlistRequest(BaseModel):
     external_id: str
-    note: str | None = None
+    note: str | None = Field(default=None, max_length=200)
 
 class PostWishlistResponse(BaseModel):
     id: int
     local_id: int
 
 class PatchWishlistRequest(BaseModel):
-    note: str | None
+    note: str | None = Field(default=None, max_length=200)
 
 class WishlistQuery(BaseModel):
     added_before: date | None = None
@@ -39,7 +39,7 @@ class WishlistQuery(BaseModel):
     released_after: date | None = None
     released_at: date | None = None
 
-    limit: int | None = Field(default=None, ge=1, le=100)
+    limit: int | None = Field(default=50, ge=1, le=100)
     offset: int | None = Field(default=None, ge=0)
 
 
@@ -69,7 +69,7 @@ class PostCompletedRequest(BaseModel):
     is_first: bool
     completed_on: date | None = None
     rating: float | None = Field(default=None, ge=0.0, le=10.0)
-    comment: str | None = None
+    comment: str | None = Field(default=None, max_length=2000)
 
 class PostCompletedResponse(BaseModel):
     id: int
@@ -79,7 +79,7 @@ class PatchCompletedRequest(BaseModel):
     is_first: bool | None = None
     completed_on: date | None = None
     rating: float | None = Field(default=None, ge=0.0, le=10.0)
-    comment: str | None = None
+    comment: str | None = Field(default=None, max_length=2000)
 
 class CompletedQuery(BaseModel):
     local_id: int | None = None
@@ -88,5 +88,5 @@ class CompletedQuery(BaseModel):
     completed_after: date | None = None
     completed_at: date | None = None
 
-    limit: int | None = Field(default=None, ge=1, le=100)
+    limit: int | None = Field(default=50, ge=1, le=100)
     offset: int | None = Field(default=None, ge=0)

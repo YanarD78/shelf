@@ -1,5 +1,4 @@
 from pydantic import BaseModel, Field, field_validator
-from fastapi import Query
 from app.schemas.base import BaseContent
 from datetime import date
 
@@ -27,7 +26,7 @@ class GameSearchQuery(BaseModel):
 
     @field_validator("dates")
     @classmethod
-    def date_validator(cls, dates: str | None) -> None:
+    def date_validator(cls, dates: str | None) -> str:
         if isinstance(dates, str):
             arr = dates.split(",")
             for x in arr:
@@ -36,7 +35,7 @@ class GameSearchQuery(BaseModel):
 
     @field_validator("platforms", "parent_platforms")
     @classmethod
-    def platform_validator(cls, platforms: str | None) -> None:
+    def platform_validator(cls, platforms: str | None) -> str:
         if isinstance(platforms, str):
             arr = platforms.split(",")
             for x in arr:
