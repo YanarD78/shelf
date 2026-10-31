@@ -6,6 +6,9 @@ class Settings(BaseSettings):
     database_url: str
     test_db: str | None = None
 
+    log_level: str = "INFO"
+    http_log_level: str = "WARNING"
+
     secret_key: str = Field(min_length=32)
     
     algorithm: Literal["HS256"]

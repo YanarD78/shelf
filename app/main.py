@@ -1,15 +1,17 @@
 import logging
+from app.config import settings
 from contextlib import asynccontextmanager
 from fastapi.responses import JSONResponse
 from fastapi import FastAPI, Request
 from httpx import AsyncClient
 from app.core.exceptions import AppError
+from app.core.logging import setup_logging
 from app.database import engine
 from app.api.routers.user import router as user_router
 from app.api.routers.movie import router as movie_router
 from app.api.routers.game import router as game_router
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+setup_logging(level=settings.log_level, http_level=settings.http_log_level)
 logger = logging.getLogger(__name__)
 
 @asynccontextmanager
