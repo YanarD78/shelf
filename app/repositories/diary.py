@@ -2,6 +2,7 @@ from app.core.exceptions import RecordAlreadyExists
 from app.dto.filters import WishlistFilter, CompletedFilter
 from app.models.diary import Wishlist, Completed
 from app.models.media import ContentItem, Movie, Game
+from asyncpg import UniqueViolationError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import insert, delete, select, update, func
@@ -60,8 +61,10 @@ class DiaryRepo:
                 self.session.add(obj)
                 await self.session.flush()
                 return obj.id
-        except IntegrityError:
-            return await self.get_item(type_of=type_of, external_id=item.external_id)
+        except IntegrityError as e:
+            if isinstance(e.orig, UniqueViolationError):
+                return await self.get_item(type_of=type_of, external_id=item.external_id)
+            raise
 
 
 

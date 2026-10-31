@@ -61,10 +61,10 @@ class Game(ContentItem):
 
     tba: Mapped[bool]
     metacritic: Mapped[int | None]
-    playtime: Mapped[int]
-    platforms: Mapped[list[str] | None] = mapped_column(ARRAY(String))
+    playtime: Mapped[int | None]
+    platforms: Mapped[list[str]] = mapped_column(ARRAY(String))
     genres: Mapped[list[str]] = mapped_column(ARRAY(String))
-    stores: Mapped[dict] = mapped_column(JSONB)
+    stores: Mapped[list[dict]] = mapped_column(JSONB)
     
 
     __mapper_args__ = {"polymorphic_identity": "game", "polymorphic_load": "selectin"}

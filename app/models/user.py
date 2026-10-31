@@ -13,5 +13,5 @@ class Users(Base):
 
 class Preferences(Base):
     __tablename__ = "users_preferences"
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     include_adult: Mapped[bool] = mapped_column(default=False)

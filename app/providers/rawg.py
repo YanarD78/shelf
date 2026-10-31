@@ -3,6 +3,9 @@ from app.config import settings
 from app.core.exceptions import ExternalServerError, ItemNotFound
 from app.dto.external import ExternalItem
 from datetime import date
+import logging
+
+logger = logging.getLogger(__name__)
 
 BASE_RAWG_URL = "https://api.rawg.io/api"
 
@@ -25,8 +28,10 @@ class RAWGClient:
         except HTTPStatusError as e:
             if e.response.status_code == 404:
                 raise ItemNotFound() from e
+            logger.warning("RAWG returned %s for %s", e.response.status_code, path)
             raise ExternalServerError() from e
         except RequestError as e:
+            logger.error("TMDB request failed: %r (path=%s)", e, path)
             raise ExternalServerError() from e
 
         
@@ -60,17 +65,17 @@ class RAWGClient:
         return ExternalItem(
             external_id=str(obj["id"]),
             title=obj["name"],
-            description=obj.get("description"),
+            description=obj.get("description_raw"),
             release_date=date.fromisoformat(obj["released"]) if obj.get("released") else None,
             cover_url=obj.get("background_image") or None,
-            vote_average=obj.get("rating") * 2,
+            vote_average=obj["rating"] * 2 if obj.get("rating") is not None else None,
             extra={
                 "tba": obj["tba"] if obj.get("released") is None else False,
                 "metacritic": obj.get("metacritic") or None,
                 "playtime": obj.get("playtime") or None,
-                "platforms": self.platforms_to_names(obj["platforms"]) if obj.get("platforms") else None,
-                "genres": self.genres_to_names(obj["genres"]) if obj.get("genres") else None,
-                "stores": self.stores_to_names(obj["stores"]) if obj.get("stores") else None
+                "platforms": self.platforms_to_names(obj["platforms"]) if obj.get("platforms") else [],
+                "genres": self.genres_to_names(obj["genres"]) if obj.get("genres") else [],
+                "stores": self.stores_to_names(obj["stores"]) if obj.get("stores") else []
             }
         )
 
@@ -81,10 +86,10 @@ class RAWGClient:
             result.append({"name": s["name"], "url": s["domain"]})
         return result
 
-    def genres_to_names(self, genres: list[dict]) -> list:
+    def genres_to_names(self, genres: list[dict]) -> list[str]:
         return [g["name"] for g in genres] if genres else []
 
-    def platforms_to_names(self, data: list[dict]) -> list:
+    def platforms_to_names(self, data: list[dict]) -> list[str]:
         platforms = []
         for p in data:
             platforms.append(p["platform"])
