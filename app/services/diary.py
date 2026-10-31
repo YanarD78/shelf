@@ -8,11 +8,11 @@ from app.models.media import MediaType
 from typing import Sequence
 from datetime import date
 
-class Manager:
+class DiaryService:
     """A class designed for searching for movies, books, games and saving them"""
-    def __init__(self, providers: dict[MediaType, MediaProvider], users_repo: UserRepo, diary_repo: DiaryRepo, current_user: int):
+    def __init__(self, providers: dict[MediaType, MediaProvider], user_repo: UserRepo, diary_repo: DiaryRepo, current_user: int):
         self.providers = providers
-        self.users_repo = users_repo
+        self.user_repo = user_repo
         self.diary_repo = diary_repo
         self.user = current_user
 
@@ -30,7 +30,7 @@ class Manager:
     async def search_items(self, type_of: MediaType, **kwargs) -> list[ExternalItem]:
         match type_of:
             case MediaType.movie:
-                preferences = await self.users_repo.get_user_preferences(user_id=self.user)
+                preferences = await self.user_repo.get_user_preferences(user_id=self.user)
                 return await self.providers[MediaType.movie].search(include_adult=preferences.include_adult, **kwargs)
             case MediaType.game:
                 return await self.providers[MediaType.game].search(**kwargs)

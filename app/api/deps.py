@@ -5,8 +5,8 @@ from app.database import async_session_maker
 from app.models.media import MediaType
 from app.repositories.user import UserRepo
 from app.repositories.diary import DiaryRepo
-from app.services.auth import UserManager
-from app.services.diary import Manager
+from app.services.auth import UserService
+from app.services.diary import DiaryService
 from app.providers.tmdb import TMDBClient
 from app.providers.rawg import RAWGClient
 from app.core.security import decode_access_token
@@ -64,11 +64,11 @@ def get_user_repo(session: SessionDep) -> UserRepo:
 
 UserRepoDep = Annotated[UserRepo, Depends(get_user_repo)]
 
-# _____User manager_____
-def get_user_manager(users_repo: UserRepoDep) -> UserManager:
-    return UserManager(users_repo)
+# _____User service_____
+def get_user_service(user_repo: UserRepoDep) -> UserService:
+    return UserService(user_repo)
 
-UserManagerDep = Annotated[UserManager, Depends(get_user_manager)]
+UserServiceDep = Annotated[UserService, Depends(get_user_service)]
 
 
 
@@ -94,15 +94,15 @@ DiaryRepoDep = Annotated[DiaryRepo, Depends(get_repo)]
 
 
 
-# _____Manager_____
-def get_manager(
+# _____Diary Manager_____
+def get_diary_service(
     tmdbclient: TMDBClientDep,
     rawgclient: RAWGClientDep,
     users_repo: UserRepoDep,
     diary_repo: DiaryRepoDep,
     current_user: CurrentUser
-) -> Manager:
-    return Manager(
+) -> DiaryService:
+    return DiaryService(
         {
             MediaType.movie: tmdbclient,
             MediaType.game: rawgclient
@@ -112,7 +112,7 @@ def get_manager(
         current_user
     )
 
-ManagerDep = Annotated[Manager, Depends(get_manager)]
+DiaryServiceDep = Annotated[DiaryService, Depends(get_diary_service)]
 
 
 

@@ -3,9 +3,7 @@ from app.repositories.user import UserRepo
 from app.core.exceptions import InvalidCredentialsError
 from app.core.security import create_tokens, hash_password, check_password, decode_refresh_token
 
-fake_hash = hash_password("password1234")
-
-class UserManager:
+class UserService:
     """A class designed for user registration and authorization"""
     def __init__(self, repo: UserRepo):
         self.repo = repo
@@ -24,7 +22,7 @@ class UserManager:
 
     async def login(self, email: str, password: str) -> dict:
         user = await self.repo.find_user(email=email.strip().lower())
-        to_check = user.password if user else fake_hash
+        to_check = user.password if user else hash_password("password1234")
         
         is_password_correct = await run_in_threadpool(check_password, password, to_check)
         if user is None or not is_password_correct:
