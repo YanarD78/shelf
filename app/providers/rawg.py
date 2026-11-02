@@ -1,9 +1,9 @@
+from datetime import date
+import logging
 from httpx import AsyncClient, HTTPStatusError, RequestError
 from app.config import settings
 from app.core.exceptions import ExternalServerError, ItemNotFound
 from app.dto.external import ExternalItem
-from datetime import date
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ class RAWGClient:
             logger.warning("RAWG returned %s for %s", e.response.status_code, path)
             raise ExternalServerError() from e
         except RequestError as e:
-            logger.error("TMDB request failed: %r (path=%s)", e, path)
+            logger.error("RAWG request failed: %s", type(e).__name__)
             raise ExternalServerError() from e
 
         

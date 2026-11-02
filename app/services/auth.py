@@ -2,6 +2,9 @@ from fastapi.concurrency import run_in_threadpool
 from app.repositories.user import UserRepo
 from app.core.exceptions import InvalidCredentialsError
 from app.core.security import create_tokens, hash_password, check_password, decode_refresh_token
+import logging
+
+logger = logging.getLogger(__name__)
 
 class UserService:
     """A class designed for user registration and authorization"""
@@ -17,7 +20,7 @@ class UserService:
             email=email.strip().lower(),
             password=hashed_password
         )
-
+        logger.info("Added new user (entry id=%s)", user_id)
         return {"id": user_id, "message": "User created successfully"}
 
     async def login(self, email: str, password: str) -> dict:

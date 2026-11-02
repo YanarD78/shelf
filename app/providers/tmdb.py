@@ -1,8 +1,11 @@
+import logging
+from datetime import date
 from httpx import AsyncClient, HTTPStatusError, RequestError
 from app.config import settings
 from app.core.exceptions import ExternalServerError, ItemNotFound
 from app.dto.external import ExternalItem
-from datetime import date
+
+logger = logging.getLogger(__name__)
 
 BASE_TMDB_URL = "https://api.themoviedb.org"
 
@@ -30,8 +33,10 @@ class TMDBClient:
         except HTTPStatusError as e:
             if e.response.status_code == 404:
                 raise ItemNotFound() from e
+            logger.warning("TMDB returned %s for %s", e.response.status_code, path)
             raise ExternalServerError() from e
         except RequestError as e:
+            logger.error("TMDB request failed: %s", e)
             raise ExternalServerError() from e
 
         

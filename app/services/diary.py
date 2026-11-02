@@ -7,6 +7,9 @@ from app.providers.base import MediaProvider
 from app.models.media import MediaType
 from typing import Sequence
 from datetime import date
+import logging
+
+logger = logging.getLogger(__name__)
 
 class DiaryService:
     """A class designed for searching for movies, books, games and saving them"""
@@ -23,6 +26,7 @@ class DiaryService:
         if local_id is None:
             item = await self.providers[type_of].get(external_id=external_id)
             local_id = await self.diary_repo.add_item(type_of=type_of, item=item)
+            logger.info("Saved %s %s to the local database (content id=%s)", type_of, external_id, local_id)
         return local_id
 
 
@@ -56,17 +60,20 @@ class DiaryService:
             local_id=local_id,
             note=note
         )
+        logger.info("User %s added %s %s to wishlist (entry id=%s)", self.user, type_of, external_id, result)
         return {"id": result, "local_id": local_id}
 
     async def edit_wishlist(self, row_id: int, note: str | None) -> None:
         result = await self.diary_repo.edit_wishlist(user_id=self.user, row_id=row_id, note=note)
         if result is None:
             raise ItemNotFound()
+        logger.debug("User %s edited wishlist entry %s", self.user, row_id)
 
     async def delete_from_wishlist(self, local_id: int) -> None:
         result = await self.diary_repo.delete_from_wishlist(user_id=self.user, local_id=local_id)
         if result is None:
             raise ItemNotFound()
+        logger.info("User %s removed content id=%s from wishlist", self.user, local_id)
 
 
 
@@ -89,6 +96,7 @@ class DiaryService:
             rating=rating,
             comment=comment,
         )
+        logger.info("User %s added %s %s to completed (entry id=%s)", self.user, type_of, external_id, result)
         return {"id": result, "local_id": local_id}
 
     async def edit_completed(self, row_id: int, data: dict) -> None:
@@ -99,6 +107,7 @@ class DiaryService:
         )
         if result is None:
             raise ItemNotFound()
+        logger.debug("User %s edited completed entry %s", self.user, row_id)
 
     async def delete_from_completed(self, row_id: int) -> None:
         result = await self.diary_repo.delete_from_completed(
@@ -107,3 +116,4 @@ class DiaryService:
         )
         if result is None:
             raise ItemNotFound()
+        logger.info("User %s deleted completed entry %s", self.user, row_id)
