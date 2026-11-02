@@ -1,6 +1,6 @@
+from datetime import date
 from pydantic import BaseModel, Field, field_validator
 from app.schemas.base import BaseContent
-from datetime import date
 
 
 

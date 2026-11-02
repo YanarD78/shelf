@@ -1,5 +1,5 @@
-from app.dto.external import ExternalItem
 from typing import Protocol
+from app.dto.external import ExternalItem
 
 class MediaProvider(Protocol):
     async def search(self, **kwargs) -> list[ExternalItem]: ...

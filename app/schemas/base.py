@@ -1,7 +1,7 @@
-from pydantic import BaseModel, ConfigDict
 from dataclasses import asdict
-from app.dto.external import ExternalItem
 from datetime import date
+from pydantic import BaseModel, ConfigDict
+from app.dto.external import ExternalItem
 
 
 

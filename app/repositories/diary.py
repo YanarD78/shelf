@@ -1,15 +1,15 @@
-from app.core.exceptions import RecordAlreadyExists
-from app.dto.filters import WishlistFilter, CompletedFilter
-from app.models.diary import Wishlist, Completed
-from app.models.media import ContentItem, Movie, Game
+from datetime import date
+from typing import Sequence
 from asyncpg import UniqueViolationError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import insert, delete, select, update, func
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import contains_eager, load_only
-from datetime import date
-from typing import Sequence
+from app.core.exceptions import RecordAlreadyExists
+from app.dto.filters import WishlistFilter, CompletedFilter
+from app.models.diary import Wishlist, Completed
+from app.models.media import ContentItem, Movie, Game
 from app.models.media import MediaType, ExternalType
 from app.dto.external import ExternalItem
 

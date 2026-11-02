@@ -1,9 +1,9 @@
-import logging
-from app.config import settings
 from contextlib import asynccontextmanager
+import logging
 from fastapi.responses import JSONResponse
 from fastapi import FastAPI, Request
 from httpx import AsyncClient
+from app.config import settings
 from app.core.exceptions import AppError
 from app.core.logging import setup_logging
 from app.database import engine

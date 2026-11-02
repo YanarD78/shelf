@@ -1,8 +1,8 @@
+from datetime import datetime
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import DateTime
 from app.config import settings
-from datetime import datetime
 
 engine = create_async_engine(
     settings.database_url,

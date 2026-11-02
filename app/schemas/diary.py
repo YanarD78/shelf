@@ -1,7 +1,7 @@
+from datetime import date, datetime
 from pydantic import BaseModel, Field
 from app.schemas.movie import Movie, SearchedMovie
 from app.schemas.game import Game, SearchedGame
-from datetime import date, datetime
 
 
 

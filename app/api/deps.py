@@ -1,5 +1,8 @@
+from collections.abc import AsyncIterator
+from typing import Annotated
 from fastapi import Depends, Query, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy.ext.asyncio import AsyncSession
 from httpx import AsyncClient
 from app.database import async_session_maker
 from app.models.media import MediaType
@@ -14,9 +17,6 @@ from app.core.exceptions import InvalidTokenError
 from app.schemas.diary import WishlistQuery, CompletedQuery
 from app.schemas.movie import MovieSearchQuery
 from app.schemas.game import GameSearchQuery
-from sqlalchemy.ext.asyncio import AsyncSession
-from collections.abc import AsyncIterator
-from typing import Annotated
 
 
 

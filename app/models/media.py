@@ -1,9 +1,9 @@
-from app.database import Base
+from datetime import datetime, date
+from enum import StrEnum
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import func, ForeignKey, UniqueConstraint, CheckConstraint, String, ARRAY, Text
 from sqlalchemy.dialects.postgresql import JSONB
-from datetime import datetime, date
-from enum import StrEnum
+from app.database import Base
 
 class MediaType(StrEnum):
     movie = "movie"

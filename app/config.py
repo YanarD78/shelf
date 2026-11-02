@@ -1,6 +1,6 @@
+from typing import Literal
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
-from typing import Literal
 
 class Settings(BaseSettings):
     database_url: str
